@@ -484,6 +484,17 @@ async function victory() {
         rewardResult = await PayToPlay.sendWinReward(gameState.playerStats.streak);
     }
     
+    // Record player data for admin panel
+    if (PayToPlay.walletAddress) {
+        AdminPanel.recordPlayer(
+            PayToPlay.walletAddress,
+            PayToPlay.hasPaid,
+            'win',
+            PayToPlay.isTrialMode ? 0 : totalReward,
+            0
+        );
+    }
+    
     setTimeout(() => {
         document.getElementById('resultTitle').textContent = 'VICTORY!';
         document.getElementById('resultTitle').className = 'result-title victory';
@@ -513,6 +524,17 @@ async function defeat() {
     if (PayToPlay.hasPaid && !PayToPlay.isTrialMode) {
         addLog(`Deducting ${penalty} $CLAWS penalty...`, 'damage');
         penaltyResult = await PayToPlay.deductLossPenalty();
+    }
+    
+    // Record player data for admin panel
+    if (PayToPlay.walletAddress) {
+        AdminPanel.recordPlayer(
+            PayToPlay.walletAddress,
+            PayToPlay.hasPaid,
+            'lose',
+            0,
+            PayToPlay.isTrialMode ? 0 : (penaltyResult && penaltyResult.success ? penalty : 0)
+        );
     }
     
     setTimeout(() => {
