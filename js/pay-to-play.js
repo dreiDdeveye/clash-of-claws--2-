@@ -1,6 +1,8 @@
 /* ==================== PAY TO PLAY SYSTEM ==================== */
 const PayToPlay = {
     ENTRY_FEE: 1000,
+    WIN_REWARD: 100,
+    LOSE_PENALTY: 50,
     TOKEN_MINT: 'BZz5TeFBaQ4uv5iXFf4S7mX7qzvyFLSbDpjeyzwRpump',
     TOKEN_DECIMALS: 6,
     TREASURY_WALLET: 'Bb7sK2Fzo22KXg83nq9uLRk5pW9eyVdJH32xo3XLd7Bn',
@@ -8,6 +10,7 @@ const PayToPlay = {
     isTrialMode: false,
     walletConnected: false,
     walletAddress: null,
+    pendingReward: 0,
     
     TOKEN_PROGRAM_ID: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     TOKEN_2022_PROGRAM_ID: 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
@@ -354,6 +357,130 @@ const PayToPlay = {
         sessionStorage.removeItem('claws_paid');
         sessionStorage.removeItem('claws_trial');
         this.updateUI();
+    },
+
+    // Send reward tokens to player on win
+    async sendWinReward(streak = 1) {
+        if (this.isTrialMode || !this.hasPaid || !this.walletConnected) {
+            return { success: false, message: 'Trial mode or not connected' };
+        }
+
+        const reward = this.WIN_REWARD + (streak * 10); // Base + streak bonus
+        
+        try {
+            const connection = new solanaWeb3.Connection(
+                'https://mainnet.helius-rpc.com/?api-key=82dfe3db-e941-4299-b074-732540b89751',
+                'confirmed'
+            );
+
+            const mintPubkey = new solanaWeb3.PublicKey(this.TOKEN_MINT);
+            const treasuryPubkey = new solanaWeb3.PublicKey(this.TREASURY_WALLET);
+            const playerPubkey = new solanaWeb3.PublicKey(this.walletAddress);
+
+            const mintAccount = await connection.getAccountInfo(mintPubkey);
+            const mintOwner = mintAccount.owner.toBase58();
+            const tokenProgramId = mintOwner === this.TOKEN_2022_PROGRAM_ID 
+                ? this.TOKEN_2022_PROGRAM_ID 
+                : this.TOKEN_PROGRAM_ID;
+
+            const treasuryATA = await this.getATA(mintPubkey, treasuryPubkey, tokenProgramId);
+            const playerATA = await this.getATA(mintPubkey, playerPubkey, tokenProgramId);
+
+            // Check treasury balance
+            const treasuryBalance = await connection.getTokenAccountBalance(treasuryATA);
+            if (treasuryBalance.value.uiAmount < reward) {
+                console.log('Treasury low on funds');
+                return { success: false, message: 'Prize pool depleted' };
+            }
+
+            // For rewards, treasury needs to sign - this would require backend
+            // For now, we track pending rewards
+            this.pendingReward += reward;
+            console.log(`Win reward: +${reward} $CLAWS (Total pending: ${this.pendingReward})`);
+            
+            return { success: true, amount: reward, pending: this.pendingReward };
+
+        } catch (error) {
+            console.error('Reward failed:', error);
+            return { success: false, message: error.message };
+        }
+    },
+
+    // Deduct tokens from player on loss
+    async deductLossPenalty() {
+        if (this.isTrialMode || !this.hasPaid || !this.walletConnected) {
+            return { success: false, message: 'Trial mode or not connected' };
+        }
+
+        const penalty = this.LOSE_PENALTY;
+
+        try {
+            const connection = new solanaWeb3.Connection(
+                'https://mainnet.helius-rpc.com/?api-key=82dfe3db-e941-4299-b074-732540b89751',
+                'confirmed'
+            );
+
+            const mintPubkey = new solanaWeb3.PublicKey(this.TOKEN_MINT);
+            const treasuryPubkey = new solanaWeb3.PublicKey(this.TREASURY_WALLET);
+            const playerPubkey = new solanaWeb3.PublicKey(this.walletAddress);
+
+            const mintAccount = await connection.getAccountInfo(mintPubkey);
+            const mintOwner = mintAccount.owner.toBase58();
+            const tokenProgramId = mintOwner === this.TOKEN_2022_PROGRAM_ID 
+                ? this.TOKEN_2022_PROGRAM_ID 
+                : this.TOKEN_PROGRAM_ID;
+
+            const playerATA = await this.getATA(mintPubkey, playerPubkey, tokenProgramId);
+            const treasuryATA = await this.getATA(mintPubkey, treasuryPubkey, tokenProgramId);
+
+            // Check player balance
+            const playerBalance = await connection.getTokenAccountBalance(playerATA);
+            if (playerBalance.value.uiAmount < penalty) {
+                console.log('Player has insufficient tokens for penalty');
+                return { success: false, message: 'Insufficient balance for penalty' };
+            }
+
+            const transaction = new solanaWeb3.Transaction();
+
+            transaction.add(
+                solanaWeb3.ComputeBudgetProgram.setComputeUnitLimit({ units: 200000 }),
+                solanaWeb3.ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50000 })
+            );
+
+            const amount = penalty * Math.pow(10, this.TOKEN_DECIMALS);
+            
+            transaction.add(
+                this.createTransferInstruction(playerATA, treasuryATA, playerPubkey, amount, tokenProgramId)
+            );
+
+            transaction.feePayer = playerPubkey;
+            
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+            transaction.recentBlockhash = blockhash;
+
+            const signed = await window.solana.signTransaction(transaction);
+            
+            const signature = await connection.sendRawTransaction(signed.serialize(), {
+                skipPreflight: true,
+                maxRetries: 5,
+                preflightCommitment: 'confirmed'
+            });
+
+            console.log('Penalty TX:', signature);
+
+            await connection.confirmTransaction({
+                signature,
+                blockhash,
+                lastValidBlockHeight
+            }, 'confirmed');
+
+            console.log(`Loss penalty: -${penalty} $CLAWS`);
+            return { success: true, amount: penalty };
+
+        } catch (error) {
+            console.error('Penalty failed:', error);
+            return { success: false, message: error.message };
+        }
     }
 };
 

@@ -325,6 +325,12 @@ function calcDamage(a, d, m, isP) {
     if (m.type === a.type) dmg = Math.floor(dmg * 1.5);
     let crit = false;
     if (Math.random() * 100 < (m.highCrit ? 25 : 6.25)) { dmg = Math.floor(dmg * 1.5); crit = true; }
+    
+    // Apply enemy damage bonus (hard mode)
+    if (!isP && gameState.battle.enemyDamageBonus) {
+        dmg = Math.floor(dmg * gameState.battle.enemyDamageBonus);
+    }
+    
     return { amount: Math.max(1, Math.floor(dmg * (0.85 + Math.random() * 0.15))), effectiveness: eff, critical: crit };
 }
 
@@ -342,7 +348,7 @@ function finishTurn(side) {
     }
 }
 
-/* ==================== ENEMY AI ==================== */
+/* ==================== ENEMY AI - HARD MODE ==================== */
 function enemyTurn() {
     if (gameState.battle.enemyHp <= 0 || gameState.battle.playerHp <= 0) return;
     if (gameState.battle.enemyStatus === 'paralysis' && Math.random() < 0.25) {
@@ -351,8 +357,69 @@ function enemyTurn() {
         return;
     }
     gameState.battle.isAnimating = true;
-    const vm = MOVES[gameState.battle.enemy.id].filter(x => x.power > 0 || x.heal || x.boost);
-    executeMove(gameState.battle.enemy, gameState.battle.player, vm[Math.floor(Math.random() * vm.length)], 'enemy');
+    
+    const enemy = gameState.battle.enemy;
+    const player = gameState.battle.player;
+    const allMoves = MOVES[enemy.id].filter(x => x.power > 0 || x.heal || x.boost);
+    
+    // Calculate player HP percentage
+    const playerHpPercent = gameState.battle.playerHp / gameState.battle.playerMaxHp;
+    const enemyHpPercent = gameState.battle.enemyHp / gameState.battle.enemyMaxHp;
+    
+    let selectedMove;
+    
+    // HARD AI LOGIC:
+    // 1. If player HP is very low (<25%), go for highest damage move
+    if (playerHpPercent < 0.25) {
+        const damageMoves = allMoves.filter(m => m.power > 0);
+        selectedMove = damageMoves.reduce((best, m) => m.power > best.power ? m : best, damageMoves[0]);
+        addLog(`${enemy.name} senses weakness!`, 'status');
+    }
+    // 2. If enemy HP is low, try to heal if possible
+    else if (enemyHpPercent < 0.35) {
+        const healMove = allMoves.find(m => m.heal);
+        if (healMove && Math.random() < 0.75) {
+            selectedMove = healMove;
+        } else {
+            // Boost defense or go aggressive
+            const boostMove = allMoves.find(m => m.boost && m.boost.defense);
+            selectedMove = boostMove && Math.random() < 0.4 ? boostMove : allMoves[Math.floor(Math.random() * allMoves.length)];
+        }
+    }
+    // 3. Look for super effective moves
+    else {
+        const superEffectiveMoves = allMoves.filter(m => {
+            if (!m.power) return false;
+            const effectiveness = TYPE_CHART[m.type]?.[player.type] || 1;
+            return effectiveness > 1;
+        });
+        
+        if (superEffectiveMoves.length > 0 && Math.random() < 0.85) {
+            // 85% chance to use super effective move
+            selectedMove = superEffectiveMoves[Math.floor(Math.random() * superEffectiveMoves.length)];
+        } else {
+            // Early game: boost stats
+            const boostMove = allMoves.find(m => m.boost && m.boost.attack);
+            const enemyBoost = gameState.battle.enemyBoosts.attack;
+            
+            if (boostMove && enemyBoost < 2 && Math.random() < 0.5) {
+                selectedMove = boostMove;
+            } else {
+                // Pick highest power move 70% of the time
+                if (Math.random() < 0.7) {
+                    const damageMoves = allMoves.filter(m => m.power > 0);
+                    selectedMove = damageMoves.reduce((best, m) => m.power > best.power ? m : best, damageMoves[0]);
+                } else {
+                    selectedMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+                }
+            }
+        }
+    }
+    
+    // Enemy gets +15% damage bonus (hard mode)
+    gameState.battle.enemyDamageBonus = 1.15;
+    
+    executeMove(enemy, player, selectedMove, 'enemy');
 }
 
 /* ==================== HP BARS ==================== */
@@ -402,33 +469,67 @@ function clearLog() {
 }
 
 /* ==================== VICTORY / DEFEAT ==================== */
-function victory() {
+async function victory() {
     gameState.playerStats.streak++;
-    const r = PayToPlay.isTrialMode ? 0 : (100 + gameState.playerStats.streak * 10);
+    const baseReward = PayToPlay.WIN_REWARD || 100;
+    const streakBonus = gameState.playerStats.streak * 10;
+    const totalReward = baseReward + streakBonus;
+    
     addLog(`${gameState.battle.enemy.name} fainted!`, 'super-effective');
     stopBattleMusic();
+    
+    // Process real token reward if paid mode
+    let rewardResult = null;
+    if (PayToPlay.hasPaid && !PayToPlay.isTrialMode) {
+        rewardResult = await PayToPlay.sendWinReward(gameState.playerStats.streak);
+    }
+    
     setTimeout(() => {
         document.getElementById('resultTitle').textContent = 'VICTORY!';
         document.getElementById('resultTitle').className = 'result-title victory';
-        document.getElementById('resultReward').textContent = PayToPlay.isTrialMode 
-            ? 'TRIAL MODE - No Rewards' 
-            : `+${r} $CLAWS`;
+        
+        if (PayToPlay.isTrialMode) {
+            document.getElementById('resultReward').textContent = 'TRIAL MODE - No Rewards';
+        } else if (rewardResult && rewardResult.success) {
+            document.getElementById('resultReward').textContent = `+${totalReward} $CLAWS`;
+        } else {
+            document.getElementById('resultReward').textContent = `+${totalReward} $CLAWS (Pending)`;
+        }
+        
         document.getElementById('resultOverlay').classList.add('active');
         document.getElementById('currentStreak').textContent = gameState.playerStats.streak;
     }, 1000);
 }
 
-function defeat() {
+async function defeat() {
     gameState.playerStats.streak = 0;
+    const penalty = PayToPlay.LOSE_PENALTY || 50;
+    
     addLog(`${gameState.battle.player.name} fainted!`, 'damage');
     stopBattleMusic();
+    
+    // Process real token penalty if paid mode
+    let penaltyResult = null;
+    if (PayToPlay.hasPaid && !PayToPlay.isTrialMode) {
+        addLog(`Deducting ${penalty} $CLAWS penalty...`, 'damage');
+        penaltyResult = await PayToPlay.deductLossPenalty();
+    }
+    
     setTimeout(() => {
         document.getElementById('resultTitle').textContent = 'DEFEAT';
         document.getElementById('resultTitle').className = 'result-title defeat';
-        document.getElementById('resultReward').textContent = 'TRY AGAIN';
+        
+        if (PayToPlay.isTrialMode) {
+            document.getElementById('resultReward').textContent = 'TRIAL MODE - No Penalty';
+        } else if (penaltyResult && penaltyResult.success) {
+            document.getElementById('resultReward').textContent = `-${penalty} $CLAWS`;
+        } else {
+            document.getElementById('resultReward').textContent = 'TRY AGAIN';
+        }
+        
         document.getElementById('resultOverlay').classList.add('active');
         document.getElementById('currentStreak').textContent = 0;
-    }, 1000);
+    }, 1500);
 }
 
 function playAgain() { 

@@ -196,10 +196,31 @@
     z-index: 1001;
     box-shadow: 0 5px 20px rgba(255, 100, 100, 0.4);
     animation: trialPulse 2s ease-in-out infinite;
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 .trial-badge.hidden {
     display: none;
+}
+
+.trial-badge .upgrade-btn {
+    background: linear-gradient(135deg, var(--accent), #ffb347);
+    border: none;
+    padding: 6px 15px;
+    color: #000;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 8px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 700;
+}
+
+.trial-badge .upgrade-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px var(--accent-glow);
 }
 
 @keyframes trialPulse {
