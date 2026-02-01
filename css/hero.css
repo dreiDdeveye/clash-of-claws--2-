@@ -222,3 +222,91 @@
     color: rgba(255, 255, 255, 0.4);
     letter-spacing: 2px;
 }
+
+/* ==================== CA SECTION ==================== */
+.ca-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+}
+
+.ca-label {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.ca-address {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    background: rgba(255, 149, 0, 0.1);
+    border: 1px solid rgba(255, 149, 0, 0.3);
+    padding: 12px 20px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+    user-select: all;
+}
+
+.ca-copy-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ca-copy-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px var(--primary-glow);
+}
+
+.ca-copy-btn svg {
+    width: 20px;
+    height: 20px;
+    color: #fff;
+}
+
+.ca-copy-btn .hidden {
+    display: none;
+}
+
+.ca-copy-btn.copied {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+}
+
+.ca-copy-btn.copied .copy-icon {
+    display: none;
+}
+
+.ca-copy-btn.copied .check-icon {
+    display: block;
+}
+
+@media (max-width: 600px) {
+    .ca-section {
+        gap: 8px;
+    }
+    
+    .ca-address {
+        font-size: 10px;
+        padding: 10px 14px;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .ca-copy-btn {
+        width: 40px;
+        height: 40px;
+    }
+}

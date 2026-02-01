@@ -573,5 +573,31 @@ function animateCounters() {
     });
 }
 
+/* ==================== COPY CA FUNCTION ==================== */
+function copyCA() {
+    const caAddress = document.getElementById('ca-address').textContent;
+    const btn = document.getElementById('ca-copy-btn');
+    
+    navigator.clipboard.writeText(caAddress).then(() => {
+        btn.classList.add('copied');
+        
+        setTimeout(() => {
+            btn.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = caAddress;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.classList.remove('copied');
+        }, 2000);
+    });
+}
 /* ==================== INIT ON LOAD ==================== */
 document.addEventListener('DOMContentLoaded', init);
