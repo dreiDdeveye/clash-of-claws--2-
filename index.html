@@ -161,27 +161,27 @@
             </p>
             
             <div class="hero-buttons">
-                <button class="btn-primary" onclick="showSelect()">ENTER ARENA</button>
+                <button class="btn-primary" onclick="showModeSelect()">PLAY NOW</button>
                 <a href="https://pump.fun/coin/9FWxitYEU58fYdRTC2rBbARBuSGd3TcaipWx1TmNpump" target="_blank" class="btn-secondary">BUY $CLAWS</a>
             </div>
 
             <!-- Beast Showcase -->
             <div class="beast-showcase">
-                <div class="preview-beast" onclick="showSelect()">
+                <div class="preview-beast" onclick="showModeSelect()">
                     <div class="beast-image-wrapper" style="--beast-color: var(--fire)">
                         <div class="beast-glow"></div>
                         <img src="assets/inferno-front.png" alt="Inferno">
                     </div>
                     <span class="name">INFERNO</span>
                 </div>
-                <div class="preview-beast" onclick="showSelect()">
+                <div class="preview-beast" onclick="showModeSelect()">
                     <div class="beast-image-wrapper" style="--beast-color: var(--water)">
                         <div class="beast-glow"></div>
                         <img src="assets/storm-front.png" alt="Storm">
                     </div>
                     <span class="name">STORM</span>
                 </div>
-                <div class="preview-beast" onclick="showSelect()">
+                <div class="preview-beast" onclick="showModeSelect()">
                     <div class="beast-image-wrapper" style="--beast-color: var(--dark)">
                         <div class="beast-glow"></div>
                         <img src="assets/molty-front.png" alt="Molty">
@@ -221,16 +221,56 @@
             </div>
         </section>
 
+        <!-- ==================== GAME MODE SELECTION ==================== -->
+        <section class="game-screen" id="modeSelectScreen">
+            <div class="mode-select-screen">
+                <div class="mode-header">
+                    <h2>SELECT GAME MODE</h2>
+                    <p>Choose your battle style</p>
+                </div>
+                <div class="mode-grid">
+                    <!-- Arena Mode -->
+                    <div class="mode-card" onclick="selectGameMode('arena')">
+                        <div class="mode-icon">⚔️</div>
+                        <div class="mode-title">ARENA</div>
+                        <div class="mode-desc">Battle random beasts</div>
+                        <div class="mode-details">
+                            <span class="mode-detail">🎯 Normal Difficulty</span>
+                            <span class="mode-detail">💰 100-200 $CLAWS/win</span>
+                            <span class="mode-detail">🔥 Boss every 3 wins</span>
+                        </div>
+                        <div class="mode-badge arena-badge">CLASSIC</div>
+                    </div>
+                    
+                    <!-- Boss Rush Mode -->
+                    <div class="mode-card boss-mode" onclick="selectGameMode('boss')">
+                        <div class="mode-icon">👹</div>
+                        <div class="mode-title">BOSS RUSH</div>
+                        <div class="mode-desc">Fight only bosses!</div>
+                        <div class="mode-details">
+                            <span class="mode-detail">💀 EXTREME Difficulty</span>
+                            <span class="mode-detail">💎 1000+ $CLAWS/win</span>
+                            <span class="mode-detail">⚡ Non-stop bosses</span>
+                        </div>
+                        <div class="mode-badge boss-badge">HIGH RISK</div>
+                    </div>
+                </div>
+                <button class="btn-secondary" onclick="showHome()">BACK</button>
+            </div>
+        </section>
+
         <!-- ==================== SELECTION SCREEN ==================== -->
         <section class="game-screen" id="selectScreen">
             <div class="select-screen">
                 <div class="select-header">
                     <h2>CHOOSE YOUR BEAST</h2>
                     <p>Click on a beast to select your champion</p>
+                    <div class="current-mode-badge" id="currentModeBadge">ARENA MODE</div>
                 </div>
                 <div class="beast-grid" id="beastGrid"></div>
                 <div class="select-actions">
                     <button class="btn-primary" onclick="startBattle()" id="startBattleBtn" disabled style="opacity:0.5">SELECT A BEAST</button>
+                    <button class="btn-secondary" onclick="showModeSelect()">CHANGE MODE</button>
                     <button class="btn-secondary" onclick="showHome()">BACK</button>
                 </div>
             </div>

@@ -67,7 +67,9 @@ let gameState = {
     selectedBeast: null,
     walletConnected: false,
     playerStats: { wins: 0, losses: 0, streak: 0 },
-    battle: null
+    battle: null,
+    gameMode: 'arena', // 'arena' or 'boss'
+    isBossFight: false
 };
 
 /* ==================== INITIALIZATION ==================== */
@@ -76,6 +78,32 @@ function init() {
     animateCounters();
     PayToPlay.init();
     initWelcome();
+}
+
+/* ==================== GAME MODE SELECTION ==================== */
+function selectGameMode(mode) {
+    gameState.gameMode = mode;
+    
+    // Update badge
+    const badge = document.getElementById('currentModeBadge');
+    if (badge) {
+        if (mode === 'boss') {
+            badge.textContent = '👹 BOSS RUSH MODE';
+            badge.classList.add('boss-mode');
+        } else {
+            badge.textContent = '⚔️ ARENA MODE';
+            badge.classList.remove('boss-mode');
+        }
+    }
+    
+    showSelect();
+}
+
+function showModeSelect() {
+    document.getElementById('heroSection').style.display = 'none';
+    document.getElementById('modeSelectScreen').classList.add('active');
+    document.getElementById('selectScreen').classList.remove('active');
+    document.getElementById('battleArena').classList.remove('active');
 }
 
 /* ==================== BEAST GRID ==================== */
@@ -116,6 +144,7 @@ function selectBeast(id) {
 /* ==================== NAVIGATION ==================== */
 function showHome() {
     document.getElementById('heroSection').style.display = 'flex';
+    document.getElementById('modeSelectScreen').classList.remove('active');
     document.getElementById('selectScreen').classList.remove('active');
     document.getElementById('battleArena').classList.remove('active');
     document.getElementById('resultOverlay').classList.remove('active');
@@ -133,12 +162,14 @@ function showSelect() {
 
 function goToSelect() {
     document.getElementById('heroSection').style.display = 'none';
+    document.getElementById('modeSelectScreen').classList.remove('active');
     document.getElementById('selectScreen').classList.add('active');
     document.getElementById('battleArena').classList.remove('active');
 }
 
 function showBattle() {
     document.getElementById('heroSection').style.display = 'none';
+    document.getElementById('modeSelectScreen').classList.remove('active');
     document.getElementById('selectScreen').classList.remove('active');
     document.getElementById('battleArena').classList.add('active');
 }
@@ -158,8 +189,11 @@ function startBattle() {
 function initBattle() {
     const p = BEASTS[gameState.selectedBeast];
     
-    // Check if it's time for BOSS BATTLE (every 3 wins)
-    const isBossBattle = gameState.playerStats.streak > 0 && gameState.playerStats.streak % BOSS_STREAK_TRIGGER === 0;
+    // Determine if this is a boss battle
+    // BOSS RUSH MODE: Always boss
+    // ARENA MODE: Boss every 3 wins
+    const isBossBattle = gameState.gameMode === 'boss' || 
+        (gameState.playerStats.streak > 0 && gameState.playerStats.streak % BOSS_STREAK_TRIGGER === 0);
     
     let e;
     if (isBossBattle) {
@@ -212,9 +246,13 @@ function initBattle() {
     clearLog();
     
     if (isBossBattle) {
-        addLog(`🔥 BOSS BATTLE! 🔥`, 'super-effective');
+        if (gameState.gameMode === 'boss') {
+            addLog(`👹 BOSS RUSH! 👹`, 'super-effective');
+        } else {
+            addLog(`🔥 BOSS BATTLE! 🔥`, 'super-effective');
+        }
         addLog(`${e.name} has appeared!`, 'damage');
-        addLog(`Defeat the boss for 10x rewards!`, 'heal');
+        addLog(`Defeat for 10x rewards!`, 'heal');
     } else {
         addLog(`Wild ${e.name} appeared!`);
     }
