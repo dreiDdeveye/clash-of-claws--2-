@@ -121,7 +121,7 @@
     <nav class="navbar">
         <div class="logo">
             <img src="assets/logo.png" alt="$CLAWS Logo" class="logo-img">
-            <span class="logo-text">$CLAWS</span>
+            <span class="logo-text">$COC</span>
         </div>
         <div class="nav-links">
             <a href="#" onclick="showHome()">HOME</a>
@@ -159,12 +159,12 @@
             </h1>
             
             <p class="hero-subtitle">
-                Choose your beast champion, master their moves, and earn $CLAWS tokens in epic turn-based battles!
+                Choose your beast labsterion, master their moves, and earn $COC tokens in epic turn-based battles!
             </p>
             
             <div class="hero-buttons">
                 <button class="btn-primary" onclick="showSelect()">ENTER ARENA</button>
-                <button class="btn-secondary">BUY $CLAWS</button>
+                <button class="btn-secondary">BUY $COC</button>
             </div>
 
             <!-- Beast Showcase -->
@@ -192,37 +192,18 @@
                 </div>
             </div>
 
-            <!-- Stats Panel -->
-            <div class="stats-panel">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalBattles">0</div>
-                    <div class="stat-label">TOTAL BATTLES</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalPlayers">0</div>
-                    <div class="stat-label">PLAYERS</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalPrize">0</div>
-                    <div class="stat-label">$CLAWS WON</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="currentStreak">0</div>
-                    <div class="stat-label">YOUR STREAK</div>
-                </div>
-            </div>
         </section>
 
         <!-- ==================== SELECTION SCREEN ==================== -->
         <section class="game-screen" id="selectScreen">
             <div class="select-screen">
                 <div class="select-header">
-                    <h2>CHOOSE YOUR BEAST</h2>
-                    <p>Click on a beast to select your champion</p>
+                    <h2>CHOOSE YOUR LOBSTERION</h2>
+                    <p>Click on a beast to select your Claw</p>
                 </div>
                 <div class="beast-grid" id="beastGrid"></div>
                 <div class="select-actions">
-                    <button class="btn-primary" onclick="startBattle()" id="startBattleBtn" disabled style="opacity:0.5">SELECT A BEAST</button>
+                    <button class="btn-primary" onclick="startBattle()" id="startBattleBtn" disabled style="opacity:0.5">SELECT A CLAW</button>
                     <button class="btn-secondary" onclick="showHome()">BACK</button>
                 </div>
             </div>
