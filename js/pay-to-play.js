@@ -92,6 +92,7 @@ const PayToPlay = {
     },
 
     updateClaimButton() {
+        // Update navbar claim button
         const claimBtn = document.getElementById('claim-rewards-btn');
         const claimAmount = document.getElementById('claim-amount');
         if (claimBtn && claimAmount) {
@@ -100,6 +101,30 @@ const PayToPlay = {
                 claimBtn.classList.remove('hidden');
             } else {
                 claimBtn.classList.add('hidden');
+            }
+        }
+        
+        // Update result screen claim button
+        const resultClaimBtn = document.getElementById('result-claim-btn');
+        const resultClaimAmount = document.getElementById('result-claim-amount');
+        const resultClaimable = document.getElementById('resultClaimable');
+        
+        if (resultClaimBtn && resultClaimAmount) {
+            resultClaimAmount.textContent = this.claimableRewards;
+            if (this.claimableRewards > 0 && this.hasPaid && !this.isTrialMode) {
+                resultClaimBtn.classList.remove('hidden');
+            } else {
+                resultClaimBtn.classList.add('hidden');
+            }
+        }
+        
+        if (resultClaimable) {
+            if (this.claimableRewards > 0 && this.hasPaid && !this.isTrialMode) {
+                resultClaimable.textContent = `Total Claimable: ${this.claimableRewards} $CLAWS`;
+                resultClaimable.classList.add('show');
+            } else {
+                resultClaimable.textContent = '';
+                resultClaimable.classList.remove('show');
             }
         }
     },

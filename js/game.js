@@ -471,18 +471,12 @@ function clearLog() {
 /* ==================== VICTORY / DEFEAT ==================== */
 async function victory() {
     gameState.playerStats.streak++;
-    const baseReward = PayToPlay.WIN_REWARD || 100;
-    const streakBonus = gameState.playerStats.streak * 10;
-    const totalReward = baseReward + streakBonus;
     
     addLog(`${gameState.battle.enemy.name} fainted!`, 'super-effective');
     stopBattleMusic();
     
-    // Process real token reward if paid mode
-    let rewardResult = null;
-    if (PayToPlay.hasPaid && !PayToPlay.isTrialMode) {
-        rewardResult = await PayToPlay.sendWinReward(gameState.playerStats.streak);
-    }
+    // Add reward to claimable (if paid mode)
+    const reward = PayToPlay.addWinReward(gameState.playerStats.streak);
     
     // Record player data for admin panel
     if (PayToPlay.walletAddress) {
@@ -490,7 +484,7 @@ async function victory() {
             PayToPlay.walletAddress,
             PayToPlay.hasPaid,
             'win',
-            PayToPlay.isTrialMode ? 0 : totalReward,
+            reward,
             0
         );
     }
@@ -499,13 +493,14 @@ async function victory() {
         document.getElementById('resultTitle').textContent = 'VICTORY!';
         document.getElementById('resultTitle').className = 'result-title victory';
         
-        if (PayToPlay.isTrialMode) {
+        if (PayToPlay.isTrialMode || !PayToPlay.hasPaid) {
             document.getElementById('resultReward').textContent = 'TRIAL MODE - No Rewards';
-        } else if (rewardResult && rewardResult.success) {
-            document.getElementById('resultReward').textContent = `+${totalReward} $CLAWS`;
         } else {
-            document.getElementById('resultReward').textContent = `+${totalReward} $CLAWS (Pending)`;
+            document.getElementById('resultReward').textContent = `+${reward} $CLAWS Added!`;
         }
+        
+        // Update claim button visibility
+        PayToPlay.updateClaimButton();
         
         document.getElementById('resultOverlay').classList.add('active');
         document.getElementById('currentStreak').textContent = gameState.playerStats.streak;
@@ -514,17 +509,9 @@ async function victory() {
 
 async function defeat() {
     gameState.playerStats.streak = 0;
-    const penalty = PayToPlay.LOSE_PENALTY || 50;
     
     addLog(`${gameState.battle.player.name} fainted!`, 'damage');
     stopBattleMusic();
-    
-    // Process real token penalty if paid mode
-    let penaltyResult = null;
-    if (PayToPlay.hasPaid && !PayToPlay.isTrialMode) {
-        addLog(`Deducting ${penalty} $CLAWS penalty...`, 'damage');
-        penaltyResult = await PayToPlay.deductLossPenalty();
-    }
     
     // Record player data for admin panel
     if (PayToPlay.walletAddress) {
@@ -533,7 +520,7 @@ async function defeat() {
             PayToPlay.hasPaid,
             'lose',
             0,
-            PayToPlay.isTrialMode ? 0 : (penaltyResult && penaltyResult.success ? penalty : 0)
+            0
         );
     }
     
@@ -541,13 +528,14 @@ async function defeat() {
         document.getElementById('resultTitle').textContent = 'DEFEAT';
         document.getElementById('resultTitle').className = 'result-title defeat';
         
-        if (PayToPlay.isTrialMode) {
+        if (PayToPlay.isTrialMode || !PayToPlay.hasPaid) {
             document.getElementById('resultReward').textContent = 'TRIAL MODE - No Penalty';
-        } else if (penaltyResult && penaltyResult.success) {
-            document.getElementById('resultReward').textContent = `-${penalty} $CLAWS`;
         } else {
-            document.getElementById('resultReward').textContent = 'TRY AGAIN';
+            document.getElementById('resultReward').textContent = 'Better luck next time!';
         }
+        
+        // Update claim button visibility (in case they have rewards to claim)
+        PayToPlay.updateClaimButton();
         
         document.getElementById('resultOverlay').classList.add('active');
         document.getElementById('currentStreak').textContent = 0;
@@ -599,5 +587,6 @@ function copyCA() {
         }, 2000);
     });
 }
+
 /* ==================== INIT ON LOAD ==================== */
 document.addEventListener('DOMContentLoaded', init);
