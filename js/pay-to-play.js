@@ -3,7 +3,7 @@ const PayToPlay = {
     ENTRY_FEE: 1000,
     WIN_REWARD: 100,
     LOSE_PENALTY: 50,
-    TOKEN_MINT: 'BZz5TeFBaQ4uv5iXFf4S7mX7qzvyFLSbDpjeyzwRpump',
+    TOKEN_MINT: '9FWxitYEU58fYdRTC2rBbARBuSGd3TcaipWx1TmNpump',
     TOKEN_DECIMALS: 6,
     TREASURY_WALLET: 'Avx2ap9XEX3EAbyBx4nD3veZ1YTofEuEJYUhW5Y6uHR4',
     hasPaid: false,
