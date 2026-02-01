@@ -216,7 +216,7 @@ const PayToPlay = {
         try {
             const connection = new solanaWeb3.Connection(
                 'https://mainnet.helius-rpc.com/?api-key=82dfe3db-e941-4299-b074-732540b89751',
-                'confirmed'
+                { commitment: 'confirmed', confirmTransactionInitialTimeout: 60000 }
             );
 
             const mintPubkey = new solanaWeb3.PublicKey(this.TOKEN_MINT);
@@ -263,11 +263,18 @@ const PayToPlay = {
                 throw new Error(`Insufficient balance. You have ${balance} but need ${this.ENTRY_FEE} $CLAWS`);
             }
 
-            const transaction = new solanaWeb3.Transaction();
+            // Get fresh blockhash right before building transaction
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+            console.log('Got blockhash:', blockhash);
 
+            const transaction = new solanaWeb3.Transaction();
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = senderPubkey;
+
+            // Add priority fee for faster confirmation
             transaction.add(
-                solanaWeb3.ComputeBudgetProgram.setComputeUnitLimit({ units: 200000 }),
-                solanaWeb3.ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50000 })
+                solanaWeb3.ComputeBudgetProgram.setComputeUnitLimit({ units: 100000 }),
+                solanaWeb3.ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 })
             );
 
             const treasuryAccount = await connection.getAccountInfo(treasuryATA);
@@ -285,28 +292,17 @@ const PayToPlay = {
                 this.createTransferInstruction(senderATA, treasuryATA, senderPubkey, amount, tokenProgramId)
             );
 
-            transaction.feePayer = senderPubkey;
-            
-            let blockhash, lastValidBlockHeight;
-            for (let i = 0; i < 3; i++) {
-                try {
-                    const result = await connection.getLatestBlockhash('confirmed');
-                    blockhash = result.blockhash;
-                    lastValidBlockHeight = result.lastValidBlockHeight;
-                    break;
-                } catch (e) {
-                    console.log(`Blockhash attempt ${i + 1} failed, retrying...`);
-                    await new Promise(r => setTimeout(r, 1000));
-                }
-            }
-            
-            transaction.recentBlockhash = blockhash;
-
+            // Sign transaction
             const signed = await window.solana.signTransaction(transaction);
             
+            if (btn) {
+                btn.textContent = 'SENDING...';
+            }
+
+            // Send with skipPreflight for speed
             const signature = await connection.sendRawTransaction(signed.serialize(), {
                 skipPreflight: true,
-                maxRetries: 5,
+                maxRetries: 3,
                 preflightCommitment: 'confirmed'
             });
 
@@ -317,14 +313,40 @@ const PayToPlay = {
                 btn.textContent = 'CONFIRMING...';
             }
 
-            const confirmation = await connection.confirmTransaction({
-                signature,
-                blockhash,
-                lastValidBlockHeight
-            }, 'confirmed');
+            // Use polling for confirmation instead of confirmTransaction
+            let confirmed = false;
+            let attempts = 0;
+            const maxAttempts = 30; // 30 seconds timeout
 
-            if (confirmation.value.err) {
-                throw new Error('Transaction failed: ' + JSON.stringify(confirmation.value.err));
+            while (!confirmed && attempts < maxAttempts) {
+                await new Promise(r => setTimeout(r, 1000));
+                attempts++;
+                
+                try {
+                    const status = await connection.getSignatureStatus(signature);
+                    
+                    if (status && status.value) {
+                        if (status.value.err) {
+                            throw new Error('Transaction failed: ' + JSON.stringify(status.value.err));
+                        }
+                        if (status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized') {
+                            confirmed = true;
+                            console.log('Transaction confirmed!');
+                        }
+                    }
+                } catch (e) {
+                    console.log('Checking status...', attempts);
+                }
+            }
+
+            if (!confirmed) {
+                // Check one more time if tx exists on chain
+                const finalCheck = await connection.getSignatureStatus(signature);
+                if (finalCheck && finalCheck.value && !finalCheck.value.err) {
+                    confirmed = true;
+                } else {
+                    throw new Error('Transaction confirmation timeout. Please check Solscan: ' + signature);
+                }
             }
 
             console.log('Payment successful:', signature);
@@ -417,7 +439,7 @@ const PayToPlay = {
         try {
             const connection = new solanaWeb3.Connection(
                 'https://mainnet.helius-rpc.com/?api-key=82dfe3db-e941-4299-b074-732540b89751',
-                'confirmed'
+                { commitment: 'confirmed', confirmTransactionInitialTimeout: 60000 }
             );
 
             const mintPubkey = new solanaWeb3.PublicKey(this.TOKEN_MINT);
@@ -440,11 +462,16 @@ const PayToPlay = {
                 return { success: false, message: 'Insufficient balance for penalty' };
             }
 
+            // Get fresh blockhash
+            const { blockhash } = await connection.getLatestBlockhash('finalized');
+
             const transaction = new solanaWeb3.Transaction();
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = playerPubkey;
 
             transaction.add(
-                solanaWeb3.ComputeBudgetProgram.setComputeUnitLimit({ units: 200000 }),
-                solanaWeb3.ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50000 })
+                solanaWeb3.ComputeBudgetProgram.setComputeUnitLimit({ units: 100000 }),
+                solanaWeb3.ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 })
             );
 
             const amount = penalty * Math.pow(10, this.TOKEN_DECIMALS);
@@ -453,29 +480,32 @@ const PayToPlay = {
                 this.createTransferInstruction(playerATA, treasuryATA, playerPubkey, amount, tokenProgramId)
             );
 
-            transaction.feePayer = playerPubkey;
-            
-            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-            transaction.recentBlockhash = blockhash;
-
             const signed = await window.solana.signTransaction(transaction);
             
             const signature = await connection.sendRawTransaction(signed.serialize(), {
                 skipPreflight: true,
-                maxRetries: 5,
+                maxRetries: 3,
                 preflightCommitment: 'confirmed'
             });
 
             console.log('Penalty TX:', signature);
 
-            await connection.confirmTransaction({
-                signature,
-                blockhash,
-                lastValidBlockHeight
-            }, 'confirmed');
+            // Poll for confirmation
+            let confirmed = false;
+            let attempts = 0;
+            while (!confirmed && attempts < 20) {
+                await new Promise(r => setTimeout(r, 1000));
+                attempts++;
+                const status = await connection.getSignatureStatus(signature);
+                if (status && status.value && !status.value.err) {
+                    if (status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized') {
+                        confirmed = true;
+                    }
+                }
+            }
 
             console.log(`Loss penalty: -${penalty} $CLAWS`);
-            return { success: true, amount: penalty };
+            return { success: confirmed, amount: penalty };
 
         } catch (error) {
             console.error('Penalty failed:', error);
