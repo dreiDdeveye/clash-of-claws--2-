@@ -157,8 +157,19 @@ function startBattle() {
 
 function initBattle() {
     const p = BEASTS[gameState.selectedBeast];
-    const eIds = Object.keys(BEASTS).filter(i => i !== gameState.selectedBeast);
-    const e = BEASTS[eIds[Math.floor(Math.random() * eIds.length)]];
+    
+    // Check if it's time for BOSS BATTLE (every 3 wins)
+    const isBossBattle = gameState.playerStats.streak > 0 && gameState.playerStats.streak % BOSS_STREAK_TRIGGER === 0;
+    
+    let e;
+    if (isBossBattle) {
+        e = getRandomBoss(); // Get random boss from BOSS_LIST
+        gameState.isBossFight = true;
+    } else {
+        const eIds = Object.keys(BEASTS).filter(i => i !== gameState.selectedBeast);
+        e = BEASTS[eIds[Math.floor(Math.random() * eIds.length)]];
+        gameState.isBossFight = false;
+    }
     
     gameState.battle = {
         player: p, 
@@ -168,23 +179,45 @@ function initBattle() {
         playerMaxHp: p.hp, 
         enemyMaxHp: e.hp,
         playerMoves: JSON.parse(JSON.stringify(MOVES[gameState.selectedBeast])),
+        enemyMoves: isBossBattle ? JSON.parse(JSON.stringify(BOSS_MOVES)) : JSON.parse(JSON.stringify(MOVES[e.id])),
         turn: p.speed >= e.speed ? 'player' : 'enemy',
         isAnimating: false,
         playerBoosts: { attack: 0, defense: 0 },
         enemyBoosts: { attack: 0, defense: 0 },
         playerStatus: null, 
-        enemyStatus: null
+        enemyStatus: null,
+        isBoss: e.isBoss || false,
+        bossDamageBonus: e.damageBonus || 1,
+        bossRewardMultiplier: e.rewardMultiplier || 1
     };
 
     document.getElementById('playerName').textContent = p.name;
     document.getElementById('enemyName').textContent = e.name;
     document.getElementById('playerSprite').src = p.back;
     document.getElementById('enemySprite').src = e.front;
+    
+    // Add boss styling
+    const enemySprite = document.getElementById('enemySprite');
+    const enemyPanel = document.querySelector('.enemy-panel');
+    if (isBossBattle) {
+        enemySprite.classList.add('boss-sprite');
+        if (enemyPanel) enemyPanel.classList.add('boss-panel');
+    } else {
+        enemySprite.classList.remove('boss-sprite');
+        if (enemyPanel) enemyPanel.classList.remove('boss-panel');
+    }
 
     updateHpBars();
     populateMoves();
     clearLog();
-    addLog(`Wild ${e.name} appeared!`);
+    
+    if (isBossBattle) {
+        addLog(`🔥 BOSS BATTLE! 🔥`, 'super-effective');
+        addLog(`${e.name} has appeared!`, 'damage');
+        addLog(`Defeat the boss for 10x rewards!`, 'heal');
+    } else {
+        addLog(`Wild ${e.name} appeared!`);
+    }
     addLog(`Go! ${p.name}!`);
     updateTurnBadge();
 
@@ -360,64 +393,100 @@ function enemyTurn() {
     
     const enemy = gameState.battle.enemy;
     const player = gameState.battle.player;
-    const allMoves = MOVES[enemy.id].filter(x => x.power > 0 || x.heal || x.boost);
+    const isBoss = gameState.battle.isBoss;
     
-    // Calculate player HP percentage
+    // Use enemy's moves (boss has different moves)
+    const allMoves = gameState.battle.enemyMoves || MOVES[enemy.id].filter(x => x.power > 0 || x.heal || x.boost);
+    
+    // Calculate HP percentages
     const playerHpPercent = gameState.battle.playerHp / gameState.battle.playerMaxHp;
     const enemyHpPercent = gameState.battle.enemyHp / gameState.battle.enemyMaxHp;
     
     let selectedMove;
     
-    // HARD AI LOGIC:
-    // 1. If player HP is very low (<25%), go for highest damage move
-    if (playerHpPercent < 0.25) {
-        const damageMoves = allMoves.filter(m => m.power > 0);
-        selectedMove = damageMoves.reduce((best, m) => m.power > best.power ? m : best, damageMoves[0]);
-        addLog(`${enemy.name} senses weakness!`, 'status');
-    }
-    // 2. If enemy HP is low, try to heal if possible
-    else if (enemyHpPercent < 0.35) {
-        const healMove = allMoves.find(m => m.heal);
-        if (healMove && Math.random() < 0.75) {
-            selectedMove = healMove;
-        } else {
-            // Boost defense or go aggressive
-            const boostMove = allMoves.find(m => m.boost && m.boost.defense);
-            selectedMove = boostMove && Math.random() < 0.4 ? boostMove : allMoves[Math.floor(Math.random() * allMoves.length)];
-        }
-    }
-    // 3. Look for super effective moves
-    else {
-        const superEffectiveMoves = allMoves.filter(m => {
-            if (!m.power) return false;
-            const effectiveness = TYPE_CHART[m.type]?.[player.type] || 1;
-            return effectiveness > 1;
-        });
-        
-        if (superEffectiveMoves.length > 0 && Math.random() < 0.85) {
-            // 85% chance to use super effective move
-            selectedMove = superEffectiveMoves[Math.floor(Math.random() * superEffectiveMoves.length)];
-        } else {
-            // Early game: boost stats
-            const boostMove = allMoves.find(m => m.boost && m.boost.attack);
-            const enemyBoost = gameState.battle.enemyBoosts.attack;
-            
-            if (boostMove && enemyBoost < 2 && Math.random() < 0.5) {
-                selectedMove = boostMove;
+    // BOSS AI - Much smarter and aggressive
+    if (isBoss) {
+        // Boss is low HP - heal or go all out
+        if (enemyHpPercent < 0.3) {
+            const healMove = allMoves.find(m => m.heal);
+            if (healMove && Math.random() < 0.6) {
+                selectedMove = healMove;
+                addLog(`${enemy.name} prepares to recover!`, 'status');
             } else {
-                // Pick highest power move 70% of the time
-                if (Math.random() < 0.7) {
-                    const damageMoves = allMoves.filter(m => m.power > 0);
-                    selectedMove = damageMoves.reduce((best, m) => m.power > best.power ? m : best, damageMoves[0]);
+                // Use APOCALYPSE if available
+                const apocalypse = allMoves.find(m => m.name === 'APOCALYPSE');
+                selectedMove = apocalypse || allMoves.find(m => m.power >= 100);
+            }
+        }
+        // Player is low - finish them!
+        else if (playerHpPercent < 0.3) {
+            const strongMoves = allMoves.filter(m => m.power >= 100);
+            selectedMove = strongMoves[Math.floor(Math.random() * strongMoves.length)];
+            addLog(`${enemy.name} senses your weakness!`, 'damage');
+        }
+        // Normal boss behavior - aggressive and varied
+        else {
+            const roll = Math.random();
+            if (roll < 0.4) {
+                // 40% chance to use strongest move
+                selectedMove = allMoves.reduce((best, m) => (m.power || 0) > (best.power || 0) ? m : best, allMoves[0]);
+            } else if (roll < 0.7) {
+                // 30% chance to use status move
+                const statusMoves = allMoves.filter(m => m.effect);
+                selectedMove = statusMoves.length > 0 ? statusMoves[Math.floor(Math.random() * statusMoves.length)] : allMoves[0];
+            } else {
+                // 30% random
+                selectedMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+            }
+        }
+        
+        // Boss damage bonus
+        gameState.battle.enemyDamageBonus = gameState.battle.bossDamageBonus;
+    } else {
+        // NORMAL AI (existing logic)
+        if (playerHpPercent < 0.25) {
+            const damageMoves = allMoves.filter(m => m.power > 0);
+            selectedMove = damageMoves.reduce((best, m) => m.power > best.power ? m : best, damageMoves[0]);
+            addLog(`${enemy.name} senses weakness!`, 'status');
+        }
+        else if (enemyHpPercent < 0.35) {
+            const healMove = allMoves.find(m => m.heal);
+            if (healMove && Math.random() < 0.75) {
+                selectedMove = healMove;
+            } else {
+                const boostMove = allMoves.find(m => m.boost && m.boost.defense);
+                selectedMove = boostMove && Math.random() < 0.4 ? boostMove : allMoves[Math.floor(Math.random() * allMoves.length)];
+            }
+        }
+        else {
+            const superEffectiveMoves = allMoves.filter(m => {
+                if (!m.power) return false;
+                const effectiveness = TYPE_CHART[m.type]?.[player.type] || 1;
+                return effectiveness > 1;
+            });
+            
+            if (superEffectiveMoves.length > 0 && Math.random() < 0.85) {
+                selectedMove = superEffectiveMoves[Math.floor(Math.random() * superEffectiveMoves.length)];
+            } else {
+                const boostMove = allMoves.find(m => m.boost && m.boost.attack);
+                const enemyBoost = gameState.battle.enemyBoosts.attack;
+                
+                if (boostMove && enemyBoost < 2 && Math.random() < 0.5) {
+                    selectedMove = boostMove;
                 } else {
-                    selectedMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+                    if (Math.random() < 0.7) {
+                        const damageMoves = allMoves.filter(m => m.power > 0);
+                        selectedMove = damageMoves.reduce((best, m) => m.power > best.power ? m : best, damageMoves[0]);
+                    } else {
+                        selectedMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+                    }
                 }
             }
         }
+        
+        // Normal enemy damage bonus
+        gameState.battle.enemyDamageBonus = 1.15;
     }
-    
-    // Enemy gets +15% damage bonus (hard mode)
-    gameState.battle.enemyDamageBonus = 1.15;
     
     executeMove(enemy, player, selectedMove, 'enemy');
 }
@@ -472,11 +541,28 @@ function clearLog() {
 async function victory() {
     gameState.playerStats.streak++;
     
+    const isBoss = gameState.isBossFight;
+    const bossMultiplier = isBoss ? (FINAL_BOSS.rewardMultiplier || 10) : 1;
+    
     addLog(`${gameState.battle.enemy.name} fainted!`, 'super-effective');
+    if (isBoss) {
+        addLog(`🏆 BOSS DEFEATED! 🏆`, 'heal');
+    }
     stopBattleMusic();
     
-    // Add reward to claimable (if paid mode)
-    const reward = PayToPlay.addWinReward(gameState.playerStats.streak);
+    // Add reward to claimable (if paid mode) - 10x for boss!
+    const baseReward = PayToPlay.addWinReward(gameState.playerStats.streak);
+    const bonusReward = isBoss ? (baseReward * (bossMultiplier - 1)) : 0;
+    
+    if (isBoss && bonusReward > 0 && PayToPlay.hasPaid && !PayToPlay.isTrialMode) {
+        PayToPlay.addReward(bonusReward);
+        // Record boss bonus to Google Sheets
+        if (PayToPlay.GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE' && PayToPlay.walletAddress) {
+            fetch(`${PayToPlay.GOOGLE_SCRIPT_URL}?action=recordWin&wallet=${encodeURIComponent(PayToPlay.walletAddress)}&reward=${bonusReward}`, { mode: 'no-cors' }).catch(e => {});
+        }
+    }
+    
+    const totalReward = baseReward + bonusReward;
     
     // Record player data for admin panel
     if (PayToPlay.walletAddress) {
@@ -484,19 +570,25 @@ async function victory() {
             PayToPlay.walletAddress,
             PayToPlay.hasPaid,
             'win',
-            reward,
+            baseReward,
             0
         );
     }
     
     setTimeout(() => {
-        document.getElementById('resultTitle').textContent = 'VICTORY!';
+        if (isBoss) {
+            document.getElementById('resultTitle').textContent = '🏆 BOSS DEFEATED! 🏆';
+        } else {
+            document.getElementById('resultTitle').textContent = 'VICTORY!';
+        }
         document.getElementById('resultTitle').className = 'result-title victory';
         
         if (PayToPlay.isTrialMode || !PayToPlay.hasPaid) {
             document.getElementById('resultReward').textContent = 'TRIAL MODE - No Rewards';
+        } else if (isBoss) {
+            document.getElementById('resultReward').textContent = `+${totalReward} $CLAWS (10x BOSS BONUS!)`;
         } else {
-            document.getElementById('resultReward').textContent = `+${reward} $CLAWS Added!`;
+            document.getElementById('resultReward').textContent = `+${totalReward} $CLAWS Added!`;
         }
         
         // Update claim button visibility

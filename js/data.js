@@ -29,7 +29,7 @@ const BEASTS = {
         name: 'MOLTY', 
         front: 'assets/molty-front.png', 
         back: 'assets/molty-back.png', 
-        hp: 100, 
+        hp: 85, 
         attack: 52, 
         defense: 25, 
         speed: 55, 
@@ -41,7 +41,7 @@ const BEASTS = {
         name: 'THUNDER', 
         front: 'assets/thunder-front.png', 
         back: 'assets/thunder-back.png', 
-        hp: 150, 
+        hp: 95, 
         attack: 48, 
         defense: 28, 
         speed: 50, 
@@ -53,7 +53,7 @@ const BEASTS = {
         name: 'JUNGLE', 
         front: 'assets/jungle-front.png', 
         back: 'assets/jungle-back.png', 
-        hp: 110, 
+        hp: 92, 
         attack: 50, 
         defense: 26, 
         speed: 58, 
@@ -61,6 +61,54 @@ const BEASTS = {
         role: 'CRIT MASTER' 
     }
 };
+
+/* ==================== FINAL BOSSES ==================== */
+const BOSS_LIST = [
+    { id: 'catana', name: '⚔️ CATANA ⚔️', image: 'assets/bosses/catana.png', type: 'dark' },
+    { id: 'copperinu', name: '🐕 COPPER INU 🐕', image: 'assets/bosses/copperinu.png', type: 'fire' },
+    { id: 'cow', name: '🐄 MAD COW 🐄', image: 'assets/bosses/cow.png', type: 'grass' },
+    { id: 'dicklet', name: '💀 DICKLET 💀', image: 'assets/bosses/dicklet.png', type: 'water' },
+    { id: 'moodeng', name: '🦛 MOO DENG 🦛', image: 'assets/bosses/moodeng.png', type: 'water' },
+    { id: 'penguin', name: '🐧 PENGUIN BOSS 🐧', image: 'assets/bosses/penguin.png', type: 'water' },
+    { id: 'pepe', name: '🐸 PEPE LORD 🐸', image: 'assets/bosses/pepe.png', type: 'grass' },
+    { id: 'pnut', name: '🥜 PNUT DESTROYER 🥜', image: 'assets/bosses/pnut.png', type: 'grass' },
+    { id: 'pweasing', name: '😈 PWEASING 😈', image: 'assets/bosses/pweasing.png', type: 'dark' },
+    { id: 'smokingchicken', name: '🐔 SMOKING CHICKEN 🐔', image: 'assets/bosses/smokingchicken.png', type: 'fire' },
+    { id: 'whale', name: '🐋 WHALE KING 🐋', image: 'assets/bosses/whale.png', type: 'water' }
+];
+
+// Function to get a random boss with boosted stats
+function getRandomBoss() {
+    const boss = BOSS_LIST[Math.floor(Math.random() * BOSS_LIST.length)];
+    return {
+        id: boss.id,
+        name: boss.name,
+        front: boss.image,
+        back: boss.image,
+        hp: 300,           // MASSIVE HP
+        attack: 80,        // Very high attack
+        defense: 55,       // Tanky
+        speed: 65,         // Fast
+        type: boss.type,
+        role: 'FINAL BOSS',
+        isBoss: true,
+        damageBonus: 1.6,  // 60% extra damage
+        rewardMultiplier: 10  // 10x rewards for defeating
+    };
+}
+
+const BOSS_MOVES = [
+    { name: 'OMEGA STRIKE', type: 'dark', power: 130, accuracy: 90, pp: 10, maxPp: 10, effect: 'paralysis', effectChance: 30 },
+    { name: 'CHAOS BLAST', type: 'fire', power: 120, accuracy: 85, pp: 10, maxPp: 10, effect: 'burn', effectChance: 40 },
+    { name: 'VOID CRUSH', type: 'dark', power: 100, accuracy: 100, pp: 15, maxPp: 15, highCrit: true },
+    { name: 'TSUNAMI RAGE', type: 'water', power: 115, accuracy: 90, pp: 10, maxPp: 10 },
+    { name: 'NATURE WRATH', type: 'grass', power: 110, accuracy: 95, pp: 10, maxPp: 10 },
+    { name: 'DARK RECOVERY', type: 'dark', power: 0, accuracy: 100, pp: 5, maxPp: 5, heal: 35 },
+    { name: 'APOCALYPSE', type: 'dark', power: 160, accuracy: 65, pp: 3, maxPp: 3 }
+];
+
+// Boss appears after this many wins in a row
+const BOSS_STREAK_TRIGGER = 3;
 
 const MOVES = {
     inferno: [
