@@ -192,7 +192,7 @@ const AdminPanel = {
     },
     
     async recordWinToSheet(wallet, reward) {
-        if (this.GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
+        if (this.GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxWtY_MP7aq9HR1bBbP5MRWndgdWAWAtABRscFm-6ypC0Kq-2MxQcHjg7jIh1pcFa_SgQ/exec') {
             try {
                 await fetch(`${this.GOOGLE_SCRIPT_URL}?action=recordWin&wallet=${wallet}&reward=${reward}`, { mode: 'no-cors' });
             } catch (e) { console.log('Record win failed:', e); }

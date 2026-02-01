@@ -287,7 +287,7 @@ const PayToPlay = {
             const claimedAmount = this.claimableRewards;
             
             // Send to Google Sheets
-            if (this.GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
+            if (this.GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxWtY_MP7aq9HR1bBbP5MRWndgdWAWAtABRscFm-6ypC0Kq-2MxQcHjg7jIh1pcFa_SgQ/exec') {
                 await fetch(`${this.GOOGLE_SCRIPT_URL}?action=addClaim&wallet=${this.walletAddress}&amount=${claimedAmount}`, { mode: 'no-cors' });
             }
             
