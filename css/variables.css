@@ -2,8 +2,8 @@
 :root {
     --primary: #ff4d4d;
     --primary-glow: rgba(255, 77, 77, 0.5);
-    --gold: #ffd700;
-    --gold-glow: rgba(255, 215, 0, 0.5);
+    --accent: #ff9500;
+    --accent-glow: rgba(255, 149, 0, 0.5);
     --cyan: #00f0ff;
     --cyan-glow: rgba(0, 240, 255, 0.5);
     --purple: #b14aed;
@@ -13,7 +13,7 @@
     --fire: #ff6b35;
     --water: #00d4ff;
     --grass: #00ff88;
-    --electric: #ffea00;
+    --electric: #ff9500;
     --dark: #8b5cf6;
 }
 

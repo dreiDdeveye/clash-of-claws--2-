@@ -1,8 +1,9 @@
 /* ==================== BATTLE MUSIC ==================== */
 const battleMusic = document.getElementById('battleMusic');
+let musicEnabled = true;
 
 function playBattleMusic() {
-    if (battleMusic) {
+    if (battleMusic && musicEnabled) {
         battleMusic.volume = 0.3;
         battleMusic.play().catch(e => console.log('Music autoplay blocked'));
     }
@@ -12,6 +13,52 @@ function stopBattleMusic() {
     if (battleMusic) {
         battleMusic.pause();
         battleMusic.currentTime = 0;
+    }
+}
+
+function toggleMusic() {
+    musicEnabled = !musicEnabled;
+    const btn = document.getElementById('music-toggle');
+    const iconOn = btn.querySelector('.music-on');
+    const iconOff = btn.querySelector('.music-off');
+    
+    if (musicEnabled) {
+        iconOn.classList.remove('hidden');
+        iconOff.classList.add('hidden');
+        btn.classList.add('active');
+        if (battleMusic && !battleMusic.paused) {
+            battleMusic.volume = 0.3;
+        }
+    } else {
+        iconOn.classList.add('hidden');
+        iconOff.classList.remove('hidden');
+        btn.classList.remove('active');
+        if (battleMusic) {
+            battleMusic.volume = 0;
+        }
+    }
+}
+
+/* ==================== WELCOME POPUP ==================== */
+function initWelcome() {
+    const dontShow = localStorage.getItem('claws_hide_welcome') === 'true';
+    const overlay = document.getElementById('welcome-overlay');
+    
+    if (dontShow && overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
+function closeWelcome() {
+    const overlay = document.getElementById('welcome-overlay');
+    const checkbox = document.getElementById('dont-show-welcome');
+    
+    if (checkbox && checkbox.checked) {
+        localStorage.setItem('claws_hide_welcome', 'true');
+    }
+    
+    if (overlay) {
+        overlay.classList.add('hidden');
     }
 }
 
@@ -28,6 +75,7 @@ function init() {
     populateBeastGrid(); 
     animateCounters();
     PayToPlay.init();
+    initWelcome();
 }
 
 /* ==================== BEAST GRID ==================== */
@@ -75,7 +123,7 @@ function showHome() {
 
 function showSelect() {
     if (!PayToPlay.hasPaid && !PayToPlay.isTrialMode) {
-        PayToPlay.updateUI();
+        PayToPlay.showPayOverlay();
         return;
     }
     document.getElementById('heroSection').style.display = 'none';

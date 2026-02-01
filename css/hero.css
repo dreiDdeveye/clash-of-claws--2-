@@ -36,7 +36,7 @@
 .hero-badge::before,
 .hero-badge::after {
     content: '✦';
-    color: var(--gold);
+    color: var(--accent);
 }
 
 @keyframes badgePulse {
@@ -51,16 +51,16 @@
 .hero-title .dollar {
     font-family: 'Press Start 2P', cursive;
     font-size: clamp(40px, 10vw, 80px);
-    background: linear-gradient(180deg, var(--gold), #ff9500);
+    background: linear-gradient(180deg, var(--accent), #ff9500);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 30px var(--gold-glow));
+    filter: drop-shadow(0 0 30px var(--accent-glow));
     animation: goldShine 3s ease-in-out infinite;
 }
 
 @keyframes goldShine {
-    0%, 100% { filter: drop-shadow(0 0 30px var(--gold-glow)) brightness(1); }
-    50% { filter: drop-shadow(0 0 50px var(--gold-glow)) brightness(1.2); }
+    0%, 100% { filter: drop-shadow(0 0 30px var(--accent-glow)) brightness(1); }
+    50% { filter: drop-shadow(0 0 50px var(--accent-glow)) brightness(1.2); }
 }
 
 .hero-title .clash {
@@ -177,8 +177,8 @@
     margin-top: 20px;
     font-family: 'Press Start 2P', cursive;
     font-size: 10px;
-    color: var(--gold);
-    text-shadow: 0 0 20px var(--gold-glow);
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--accent-glow);
     letter-spacing: 1px;
 }
 
@@ -211,7 +211,7 @@
 .stat-value {
     font-family: 'Press Start 2P', cursive;
     font-size: 18px;
-    background: linear-gradient(90deg, var(--gold), var(--cyan));
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 10px;
