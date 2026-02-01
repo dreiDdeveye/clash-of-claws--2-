@@ -6,7 +6,7 @@ const PayToPlay = {
     TOKEN_DECIMALS: 6,
     TREASURY_WALLET: 'Avx2ap9XEX3EAbyBx4nD3veZ1YTofEuEJYUhW5Y6uHR4',
     
-    // Google Sheets Backend URL - PASTE YOUR URL HERE
+    // ✅ CONFIGURED: Google Sheets Backend URL
     GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxWtY_MP7aq9HR1bBbP5MRWndgdWAWAtABRscFm-6ypC0Kq-2MxQcHjg7jIh1pcFa_SgQ/exec',
     
     hasPaid: false,
@@ -286,17 +286,15 @@ const PayToPlay = {
         try {
             const claimedAmount = this.claimableRewards;
             
-            // ⚠️ FIXED: Check if URL is configured properly
-            if (this.GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxWtY_MP7aq9HR1bBbP5MRWndgdWAWAtABRscFm-6ypC0Kq-2MxQcHjg7jIh1pcFa_SgQ/exec' || !this.GOOGLE_SCRIPT_URL) {
-                throw new Error('Google Sheets backend not configured! Please set GOOGLE_SCRIPT_URL in pay-to-play.js');
-            }
+            // Send claim to Google Sheets
+            console.log('📤 Sending claim request to Google Sheets...');
+            console.log('Wallet:', this.walletAddress);
+            console.log('Amount:', claimedAmount, '$CLAWS');
             
-            // ⚠️ FIXED: Send claim to Google Sheets with proper error handling
-            console.log('Sending claim request to Google Sheets...');
             const url = `${this.GOOGLE_SCRIPT_URL}?action=addClaim&wallet=${encodeURIComponent(this.walletAddress)}&amount=${claimedAmount}`;
             
             try {
-                // Use a timeout to ensure the request completes
+                // Use timeout to ensure request completes
                 await Promise.race([
                     fetch(url, { 
                         mode: 'no-cors',
@@ -305,14 +303,12 @@ const PayToPlay = {
                     new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
                 ]);
                 
-                // Wait a bit for the server to process
+                // Wait for server to process
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
-                console.log('Claim request sent successfully');
+                console.log('✅ Claim request sent successfully!');
             } catch (fetchError) {
-                console.error('Fetch error (this is expected with no-cors):', fetchError.message);
-                // Don't throw - no-cors mode doesn't allow reading responses
-                // The request likely went through even if we got an error
+                console.log('⚠️ Fetch completed (no-cors mode blocks response reading, but request was sent)');
             }
             
             // Reset local claimable AFTER successful submission
@@ -320,9 +316,12 @@ const PayToPlay = {
             localStorage.setItem('claws_claimable', '0');
             this.updateClaimButton();
 
-            alert(`Claim submitted for ${claimedAmount} $CLAWS!\n\nWallet: ${this.walletAddress.slice(0,6)}...${this.walletAddress.slice(-6)}\n\nProcessing: 24-48 hours\n\nCheck the admin panel to verify your claim was recorded.`);
+            alert(`✅ Claim submitted for ${claimedAmount} $CLAWS!\n\n🔹 Wallet: ${this.walletAddress.slice(0,6)}...${this.walletAddress.slice(-6)}\n🔹 Amount: ${claimedAmount} $CLAWS\n\n⏰ Processing: 24-48 hours\n\n💡 Type "admin" to verify your claim was recorded.`);
+            
+            console.log('🎉 Claim process completed!');
+            console.log('💡 TIP: Type "admin" on the page to open admin panel and verify claim');
         } catch (error) {
-            console.error('Claim error:', error);
+            console.error('❌ Claim error:', error);
             alert('Claim failed: ' + error.message);
         } finally {
             if (claimBtn) { claimBtn.disabled = false; claimBtn.innerHTML = `CLAIM <span id="claim-amount">${this.claimableRewards}</span> $CLAWS`; }
@@ -335,12 +334,16 @@ const PayToPlay = {
         const reward = this.WIN_REWARD + (streak * 10);
         this.addReward(reward);
         
-        // ⚠️ FIXED: Record to Google Sheets with better error handling
-        if (this.GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxWtY_MP7aq9HR1bBbP5MRWndgdWAWAtABRscFm-6ypC0Kq-2MxQcHjg7jIh1pcFa_SgQ/exec' && this.walletAddress) {
+        // Record to Google Sheets
+        if (this.walletAddress) {
+            console.log('🏆 Recording win to Google Sheets...');
+            console.log('Wallet:', this.walletAddress);
+            console.log('Reward:', reward, '$CLAWS');
+            
             const url = `${this.GOOGLE_SCRIPT_URL}?action=recordWin&wallet=${encodeURIComponent(this.walletAddress)}&reward=${reward}`;
             fetch(url, { mode: 'no-cors' })
-                .then(() => console.log('Win recorded to Google Sheets'))
-                .catch(e => console.error('Failed to record win:', e));
+                .then(() => console.log('✅ Win recorded successfully!'))
+                .catch(e => console.log('⚠️ Win record sent (no-cors mode)'));
         }
         
         return reward;

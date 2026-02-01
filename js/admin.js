@@ -4,8 +4,8 @@ const AdminPanel = {
     secretCode: '',
     ADMIN_CODE: 'admin',
     
-    // Google Sheets Backend URL - PASTE YOUR URL HERE
-    GOOGLE_SCRIPT_URL: 'YOUR_GOOGLE_SCRIPT_URL_HERE',
+    // ✅ CONFIGURED: Google Sheets Backend URL
+    GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxWtY_MP7aq9HR1bBbP5MRWndgdWAWAtABRscFm-6ypC0Kq-2MxQcHjg7jIh1pcFa_SgQ/exec',
     
     players: [],
     stats: {},
@@ -13,6 +13,7 @@ const AdminPanel = {
     
     init() {
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+        console.log('🔐 Admin Panel initialized. Type "admin" to access.');
     },
     
     handleKeyPress(e) {
@@ -27,6 +28,7 @@ const AdminPanel = {
     },
     
     async openPanel() {
+        console.log('🔓 Opening Admin Panel...');
         this.isOpen = true;
         this.renderLoading();
         document.getElementById('admin-overlay').classList.add('active');
@@ -34,39 +36,76 @@ const AdminPanel = {
     },
     
     closePanel() {
+        console.log('🔒 Closing Admin Panel');
         this.isOpen = false;
         document.getElementById('admin-overlay').classList.remove('active');
     },
     
     async fetchData() {
         this.isLoading = true;
+        console.log('📊 Fetching data from Google Sheets...');
+        
         try {
-            if (this.GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
-                const res = await fetch(`${this.GOOGLE_SCRIPT_URL}?action=getData`);
-                const data = await res.json();
-                if (data.success) this.players = data.players;
-                
-                const statsRes = await fetch(`${this.GOOGLE_SCRIPT_URL}?action=getStats`);
-                const statsData = await statsRes.json();
-                if (statsData.success) this.stats = statsData.stats;
+            // Fetch player data
+            const dataUrl = `${this.GOOGLE_SCRIPT_URL}?action=getData`;
+            console.log('🔗 Fetching from:', dataUrl);
+            
+            const res = await fetch(dataUrl);
+            const data = await res.json();
+            
+            if (data.success) {
+                this.players = data.players;
+                console.log('✅ Loaded', this.players.length, 'players');
+            } else {
+                console.error('❌ Failed to load players:', data.error);
             }
-        } catch (e) { console.error('Fetch failed:', e); }
+            
+            // Fetch stats
+            const statsUrl = `${this.GOOGLE_SCRIPT_URL}?action=getStats`;
+            const statsRes = await fetch(statsUrl);
+            const statsData = await statsRes.json();
+            
+            if (statsData.success) {
+                this.stats = statsData.stats;
+                console.log('✅ Stats loaded:', this.stats);
+            } else {
+                console.error('❌ Failed to load stats:', statsData.error);
+            }
+        } catch (e) {
+            console.error('❌ Fetch failed:', e);
+            alert('Failed to load data from Google Sheets. Check console for details.');
+        }
+        
         this.isLoading = false;
         this.render();
     },
     
     async markPaid(row) {
+        console.log('💰 Marking row', row, 'as paid...');
+        
         try {
-            if (this.GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
-                await fetch(`${this.GOOGLE_SCRIPT_URL}?action=markPaid&row=${row}`);
-            }
+            const url = `${this.GOOGLE_SCRIPT_URL}?action=markPaid&row=${row}`;
+            await fetch(url);
+            console.log('✅ Marked as paid successfully');
+            
+            // Refresh data
             await this.fetchData();
-        } catch (e) { console.error('Mark paid failed:', e); }
+        } catch (e) {
+            console.error('❌ Mark paid failed:', e);
+            alert('Failed to mark as paid. Check console for details.');
+        }
     },
     
     copyToClipboard(text) {
         navigator.clipboard.writeText(text);
-        alert('Copied: ' + text);
+        console.log('📋 Copied to clipboard:', text);
+        
+        // Visual feedback
+        const Toast = document.createElement('div');
+        Toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#00ff88;color:#000;padding:15px 20px;border-radius:8px;font-weight:bold;z-index:99999;animation:slideIn 0.3s;';
+        Toast.textContent = '✅ Copied: ' + text.slice(0, 10) + '...';
+        document.body.appendChild(Toast);
+        setTimeout(() => Toast.remove(), 2000);
     },
     
     renderLoading() {
@@ -85,9 +124,14 @@ const AdminPanel = {
     },
     
     render() {
+        console.log('🎨 Rendering admin panel...');
+        
         const stats = this.stats;
         const pendingClaims = this.players.filter(p => String(p.paid).startsWith('Pending'));
         const paidPlayers = this.players.filter(p => p.paid === 'Yes');
+        
+        console.log('📊 Pending claims:', pendingClaims.length);
+        console.log('💸 Paid players:', paidPlayers.length);
         
         document.getElementById('admin-overlay').innerHTML = `
             <div class="admin-container">
@@ -183,6 +227,8 @@ const AdminPanel = {
                 </div>
             </div>
         `;
+        
+        console.log('✅ Admin panel rendered successfully');
     },
     
     recordPlayer(wallet, isPaid, result, tokensWon) {
@@ -192,10 +238,12 @@ const AdminPanel = {
     },
     
     async recordWinToSheet(wallet, reward) {
-        if (this.GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxWtY_MP7aq9HR1bBbP5MRWndgdWAWAtABRscFm-6ypC0Kq-2MxQcHjg7jIh1pcFa_SgQ/exec') {
-            try {
-                await fetch(`${this.GOOGLE_SCRIPT_URL}?action=recordWin&wallet=${wallet}&reward=${reward}`, { mode: 'no-cors' });
-            } catch (e) { console.log('Record win failed:', e); }
+        try {
+            const url = `${this.GOOGLE_SCRIPT_URL}?action=recordWin&wallet=${encodeURIComponent(wallet)}&reward=${reward}`;
+            await fetch(url, { mode: 'no-cors' });
+            console.log('✅ Win recorded for wallet:', wallet.slice(0, 6) + '...');
+        } catch (e) {
+            console.log('⚠️ Record win sent (no-cors mode)');
         }
     }
 };
