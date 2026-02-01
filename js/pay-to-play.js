@@ -5,7 +5,7 @@ const PayToPlay = {
     LOSE_PENALTY: 50,
     TOKEN_MINT: 'BZz5TeFBaQ4uv5iXFf4S7mX7qzvyFLSbDpjeyzwRpump',
     TOKEN_DECIMALS: 6,
-    TREASURY_WALLET: 'Bb7sK2Fzo22KXg83nq9uLRk5pW9eyVdJH32xo3XLd7Bn',
+    TREASURY_WALLET: '4diiidYD69Ukb9rDqL9Zm3aqVrfrietgRoHLgsLYgAx2',
     hasPaid: false,
     isTrialMode: false,
     walletConnected: false,
