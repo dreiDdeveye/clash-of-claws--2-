@@ -3,9 +3,11 @@ const PayToPlay = {
     ENTRY_FEE: 1000,
     TOKEN_MINT: 'BZz5TeFBaQ4uv5iXFf4S7mX7qzvyFLSbDpjeyzwRpump',
     TOKEN_DECIMALS: 6,
-    TREASURY_WALLET: '4diiidYD69Ukb9rDqL9Zm3aqVrfrietgRoHLgsLYgAx2',
+    TREASURY_WALLET: 'Bb7sK2Fzo22KXg83nq9uLRk5pW9eyVdJH32xo3XLd7Bn',
     hasPaid: false,
     isTrialMode: false,
+    walletConnected: false,
+    walletAddress: null,
     
     TOKEN_PROGRAM_ID: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     TOKEN_2022_PROGRAM_ID: 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
@@ -14,21 +16,76 @@ const PayToPlay = {
     init() {
         this.hasPaid = sessionStorage.getItem('claws_paid') === 'true';
         this.isTrialMode = sessionStorage.getItem('claws_trial') === 'true';
-        this.updateUI();
+        this.updateTrialBadge();
+        this.checkWalletConnection();
     },
 
-    updateUI() {
-        const overlay = document.getElementById('pay-overlay');
-        const trialBadge = document.getElementById('trial-badge');
-        
-        if (overlay) {
-            if (this.hasPaid || this.isTrialMode) {
-                overlay.classList.add('hidden');
-            } else {
-                overlay.classList.remove('hidden');
+    async checkWalletConnection() {
+        if (window.solana && window.solana.isPhantom) {
+            try {
+                const resp = await window.solana.connect({ onlyIfTrusted: true });
+                if (resp.publicKey) {
+                    this.walletConnected = true;
+                    this.walletAddress = resp.publicKey.toString();
+                    this.updateWalletButton();
+                    this.updateWalletStatus();
+                }
+            } catch (e) {
+                // Not connected yet
             }
         }
+    },
+
+    async connectWallet() {
+        const btn = document.getElementById('walletBtn');
         
+        if (this.walletConnected) {
+            // Disconnect
+            if (window.solana) {
+                await window.solana.disconnect();
+            }
+            this.walletConnected = false;
+            this.walletAddress = null;
+            this.updateWalletButton();
+            this.updateWalletStatus();
+            return;
+        }
+
+        // Connect
+        try {
+            if (!window.solana) {
+                window.open('https://phantom.app/', '_blank');
+                alert('Please install Phantom wallet!');
+                return;
+            }
+
+            btn.textContent = 'CONNECTING...';
+            const resp = await window.solana.connect();
+            this.walletConnected = true;
+            this.walletAddress = resp.publicKey.toString();
+            this.updateWalletButton();
+            this.updateWalletStatus();
+        } catch (error) {
+            console.error('Wallet connection failed:', error);
+            btn.textContent = 'CONNECT';
+        }
+    },
+
+    updateWalletButton() {
+        const btn = document.getElementById('walletBtn');
+        if (!btn) return;
+        
+        if (this.walletConnected && this.walletAddress) {
+            btn.textContent = this.walletAddress.slice(0, 4) + '...' + this.walletAddress.slice(-4);
+            btn.classList.add('connected');
+        } else {
+            btn.textContent = 'CONNECT';
+            btn.classList.remove('connected');
+        }
+    },
+
+    updateTrialBadge() {
+        const trialBadge = document.getElementById('trial-badge');
         if (trialBadge) {
             if (this.isTrialMode && !this.hasPaid) {
                 trialBadge.classList.remove('hidden');
@@ -36,7 +93,28 @@ const PayToPlay = {
                 trialBadge.classList.add('hidden');
             }
         }
-        
+    },
+
+    showPayOverlay() {
+        const overlay = document.getElementById('pay-overlay');
+        if (overlay) {
+            overlay.classList.remove('hidden');
+        }
+        this.updateWalletStatus();
+    },
+
+    hidePayOverlay() {
+        const overlay = document.getElementById('pay-overlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+        }
+    },
+
+    updateUI() {
+        this.updateTrialBadge();
+        if (this.hasPaid || this.isTrialMode) {
+            this.hidePayOverlay();
+        }
         this.updateWalletStatus();
     },
 
@@ -44,9 +122,8 @@ const PayToPlay = {
         const statusEl = document.getElementById('wallet-status');
         if (!statusEl) return;
         
-        if (window.solana && window.solana.isConnected) {
-            const addr = window.solana.publicKey.toString();
-            statusEl.textContent = addr.slice(0, 4) + '...' + addr.slice(-4);
+        if (this.walletConnected && this.walletAddress) {
+            statusEl.textContent = this.walletAddress.slice(0, 4) + '...' + this.walletAddress.slice(-4);
             statusEl.classList.add('connected');
         } else {
             statusEl.textContent = 'Wallet not connected';
@@ -60,8 +137,9 @@ const PayToPlay = {
         sessionStorage.setItem('claws_trial', 'true');
         sessionStorage.removeItem('claws_paid');
         
-        this.updateUI();
-        showSelect();
+        this.hidePayOverlay();
+        this.updateTrialBadge();
+        goToSelect();
         
         alert('FREE TRIAL MODE\n\nYou can play and practice, but you won\'t earn any $CLAWS rewards.\n\nPay 1000 $CLAWS to unlock full rewards!');
     },
@@ -119,6 +197,13 @@ const PayToPlay = {
 
     async payEntryFee() {
         const btn = document.getElementById('pay-btn');
+        
+        // Check if wallet is connected first
+        if (!this.walletConnected) {
+            alert('Please connect your wallet first!');
+            return;
+        }
+
         if (btn) {
             btn.classList.add('loading');
             btn.disabled = true;
@@ -126,14 +211,6 @@ const PayToPlay = {
         }
 
         try {
-            if (!window.solana || !window.solana.isPhantom) {
-                alert('Please install Phantom wallet!');
-                throw new Error('Phantom not found');
-            }
-
-            const resp = await window.solana.connect();
-            this.updateWalletStatus();
-
             const connection = new solanaWeb3.Connection(
                 'https://mainnet.helius-rpc.com/?api-key=82dfe3db-e941-4299-b074-732540b89751',
                 'confirmed'
@@ -141,7 +218,7 @@ const PayToPlay = {
 
             const mintPubkey = new solanaWeb3.PublicKey(this.TOKEN_MINT);
             const treasuryPubkey = new solanaWeb3.PublicKey(this.TREASURY_WALLET);
-            const senderPubkey = resp.publicKey;
+            const senderPubkey = new solanaWeb3.PublicKey(this.walletAddress);
 
             console.log('Fetching mint account to detect token program...');
             const mintAccount = await connection.getAccountInfo(mintPubkey);
@@ -233,6 +310,10 @@ const PayToPlay = {
             console.log('Transaction sent:', signature);
             console.log('View on Solscan: https://solscan.io/tx/' + signature);
 
+            if (btn) {
+                btn.textContent = 'CONFIRMING...';
+            }
+
             const confirmation = await connection.confirmTransaction({
                 signature,
                 blockhash,
@@ -249,11 +330,11 @@ const PayToPlay = {
             this.isTrialMode = false;
             sessionStorage.setItem('claws_paid', 'true');
             sessionStorage.removeItem('claws_trial');
-            this.updateUI();
-
-            showSelect();
+            this.hidePayOverlay();
+            this.updateTrialBadge();
 
             alert('Payment successful! Choose your beast!');
+            goToSelect();
 
         } catch (error) {
             console.error('Payment failed:', error);
@@ -275,6 +356,10 @@ const PayToPlay = {
         this.updateUI();
     }
 };
+
+function connectWallet() {
+    PayToPlay.connectWallet();
+}
 
 function payEntryFee() {
     PayToPlay.payEntryFee();

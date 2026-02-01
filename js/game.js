@@ -119,13 +119,19 @@ function showHome() {
     document.getElementById('selectScreen').classList.remove('active');
     document.getElementById('battleArena').classList.remove('active');
     document.getElementById('resultOverlay').classList.remove('active');
+    stopBattleMusic();
 }
 
 function showSelect() {
+    // Check if user has paid or is in trial mode
     if (!PayToPlay.hasPaid && !PayToPlay.isTrialMode) {
         PayToPlay.showPayOverlay();
         return;
     }
+    goToSelect();
+}
+
+function goToSelect() {
     document.getElementById('heroSection').style.display = 'none';
     document.getElementById('selectScreen').classList.add('active');
     document.getElementById('battleArena').classList.remove('active');
@@ -135,18 +141,6 @@ function showBattle() {
     document.getElementById('heroSection').style.display = 'none';
     document.getElementById('selectScreen').classList.remove('active');
     document.getElementById('battleArena').classList.add('active');
-}
-
-/* ==================== WALLET ==================== */
-async function connectWallet() {
-    const btn = document.getElementById('walletBtn');
-    if (gameState.walletConnected) { 
-        gameState.walletConnected = false; 
-        btn.textContent = 'CONNECT'; 
-        return; 
-    }
-    gameState.walletConnected = true;
-    btn.textContent = 'CONNECTED';
 }
 
 /* ==================== BATTLE INITIALIZATION ==================== */
