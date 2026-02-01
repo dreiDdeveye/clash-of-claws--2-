@@ -2,10 +2,13 @@
 const PayToPlay = {
     ENTRY_FEE: 1000,
     WIN_REWARD: 100,
-    LOSE_PENALTY: 50,
     TOKEN_MINT: '9FWxitYEU58fYdRTC2rBbARBuSGd3TcaipWx1TmNpump',
     TOKEN_DECIMALS: 6,
     TREASURY_WALLET: 'Avx2ap9XEX3EAbyBx4nD3veZ1YTofEuEJYUhW5Y6uHR4',
+    
+    // Google Sheets Backend URL - PASTE YOUR URL HERE
+    GOOGLE_SCRIPT_URL: 'YOUR_GOOGLE_SCRIPT_URL_HERE',
+    
     hasPaid: false,
     isTrialMode: false,
     walletConnected: false,
@@ -41,7 +44,6 @@ const PayToPlay = {
 
     async connectWallet() {
         const btn = document.getElementById('walletBtn');
-        
         if (this.walletConnected) {
             if (window.solana) await window.solana.disconnect();
             this.walletConnected = false;
@@ -50,7 +52,6 @@ const PayToPlay = {
             this.updateWalletStatus();
             return;
         }
-
         try {
             if (!window.solana) {
                 window.open('https://phantom.app/', '_blank');
@@ -63,9 +64,7 @@ const PayToPlay = {
             this.walletAddress = resp.publicKey.toString();
             this.updateWalletButton();
             this.updateWalletStatus();
-        } catch (error) {
-            btn.textContent = 'CONNECT';
-        }
+        } catch (e) { btn.textContent = 'CONNECT'; }
     },
 
     updateWalletButton() {
@@ -81,43 +80,28 @@ const PayToPlay = {
     },
 
     updateTrialBadge() {
-        const trialBadge = document.getElementById('trial-badge');
-        if (trialBadge) {
-            if (this.isTrialMode && !this.hasPaid) {
-                trialBadge.classList.remove('hidden');
-            } else {
-                trialBadge.classList.add('hidden');
-            }
+        const badge = document.getElementById('trial-badge');
+        if (badge) {
+            badge.classList.toggle('hidden', !(this.isTrialMode && !this.hasPaid));
         }
     },
 
     updateClaimButton() {
-        // Update navbar claim button
         const claimBtn = document.getElementById('claim-rewards-btn');
         const claimAmount = document.getElementById('claim-amount');
         if (claimBtn && claimAmount) {
             claimAmount.textContent = this.claimableRewards;
-            if (this.claimableRewards > 0) {
-                claimBtn.classList.remove('hidden');
-            } else {
-                claimBtn.classList.add('hidden');
-            }
+            claimBtn.classList.toggle('hidden', this.claimableRewards <= 0);
         }
         
-        // Update result screen claim button
         const resultClaimBtn = document.getElementById('result-claim-btn');
         const resultClaimAmount = document.getElementById('result-claim-amount');
         const resultClaimable = document.getElementById('resultClaimable');
         
         if (resultClaimBtn && resultClaimAmount) {
             resultClaimAmount.textContent = this.claimableRewards;
-            if (this.claimableRewards > 0 && this.hasPaid && !this.isTrialMode) {
-                resultClaimBtn.classList.remove('hidden');
-            } else {
-                resultClaimBtn.classList.add('hidden');
-            }
+            resultClaimBtn.classList.toggle('hidden', !(this.claimableRewards > 0 && this.hasPaid && !this.isTrialMode));
         }
-        
         if (resultClaimable) {
             if (this.claimableRewards > 0 && this.hasPaid && !this.isTrialMode) {
                 resultClaimable.textContent = `Total Claimable: ${this.claimableRewards} $CLAWS`;
@@ -203,9 +187,7 @@ const PayToPlay = {
         const data = new Uint8Array(9);
         data[0] = 3;
         const bigAmount = BigInt(amount);
-        for (let i = 0; i < 8; i++) {
-            data[1 + i] = Number((bigAmount >> BigInt(i * 8)) & BigInt(0xff));
-        }
+        for (let i = 0; i < 8; i++) data[1 + i] = Number((bigAmount >> BigInt(i * 8)) & BigInt(0xff));
         return new solanaWeb3.TransactionInstruction({
             keys: [
                 { pubkey: source, isSigner: false, isWritable: true },
@@ -219,21 +201,11 @@ const PayToPlay = {
 
     async payEntryFee() {
         const btn = document.getElementById('pay-btn');
-        if (!this.walletConnected) {
-            alert('Please connect your wallet first!');
-            return;
-        }
-        if (btn) {
-            btn.classList.add('loading');
-            btn.disabled = true;
-            btn.textContent = 'PROCESSING...';
-        }
+        if (!this.walletConnected) { alert('Please connect your wallet first!'); return; }
+        if (btn) { btn.classList.add('loading'); btn.disabled = true; btn.textContent = 'PROCESSING...'; }
 
         try {
-            const connection = new solanaWeb3.Connection(
-                'https://mainnet.helius-rpc.com/?api-key=baf23f95-165a-4136-b897-54b932e51c52',
-                'confirmed'
-            );
+            const connection = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=baf23f95-165a-4136-b897-54b932e51c52', 'confirmed');
             const mintPubkey = new solanaWeb3.PublicKey(this.TOKEN_MINT);
             const treasuryPubkey = new solanaWeb3.PublicKey(this.TREASURY_WALLET);
             const senderPubkey = new solanaWeb3.PublicKey(this.walletAddress);
@@ -241,10 +213,7 @@ const PayToPlay = {
             const mintAccount = await connection.getAccountInfo(mintPubkey);
             if (!mintAccount) throw new Error('Token mint not found!');
             
-            const mintOwner = mintAccount.owner.toBase58();
-            let tokenProgramId = mintOwner === this.TOKEN_2022_PROGRAM_ID 
-                ? this.TOKEN_2022_PROGRAM_ID : this.TOKEN_PROGRAM_ID;
-
+            const tokenProgramId = mintAccount.owner.toBase58() === this.TOKEN_2022_PROGRAM_ID ? this.TOKEN_2022_PROGRAM_ID : this.TOKEN_PROGRAM_ID;
             const senderATA = await this.getATA(mintPubkey, senderPubkey, tokenProgramId);
             const treasuryATA = await this.getATA(mintPubkey, treasuryPubkey, tokenProgramId);
 
@@ -252,9 +221,7 @@ const PayToPlay = {
             if (!senderAccount) throw new Error('You don\'t have any $CLAWS tokens!');
 
             const balanceInfo = await connection.getTokenAccountBalance(senderATA);
-            if (balanceInfo.value.uiAmount < this.ENTRY_FEE) {
-                throw new Error(`Insufficient balance. Need ${this.ENTRY_FEE} $CLAWS`);
-            }
+            if (balanceInfo.value.uiAmount < this.ENTRY_FEE) throw new Error(`Insufficient balance. Need ${this.ENTRY_FEE} $CLAWS`);
 
             const instructions = [
                 solanaWeb3.ComputeBudgetProgram.setComputeUnitLimit({ units: 100000 }),
@@ -262,16 +229,11 @@ const PayToPlay = {
             ];
 
             const treasuryAccount = await connection.getAccountInfo(treasuryATA);
-            if (!treasuryAccount) {
-                instructions.push(this.createATAInstruction(senderPubkey, treasuryATA, treasuryPubkey, mintPubkey, tokenProgramId));
-            }
-
-            instructions.push(this.createTransferInstruction(senderATA, treasuryATA, senderPubkey, 
-                this.ENTRY_FEE * Math.pow(10, this.TOKEN_DECIMALS), tokenProgramId));
+            if (!treasuryAccount) instructions.push(this.createATAInstruction(senderPubkey, treasuryATA, treasuryPubkey, mintPubkey, tokenProgramId));
+            instructions.push(this.createTransferInstruction(senderATA, treasuryATA, senderPubkey, this.ENTRY_FEE * Math.pow(10, this.TOKEN_DECIMALS), tokenProgramId));
 
             if (btn) btn.textContent = 'PREPARING...';
             const { blockhash } = await connection.getLatestBlockhash('finalized');
-
             const transaction = new solanaWeb3.Transaction();
             transaction.recentBlockhash = blockhash;
             transaction.feePayer = senderPubkey;
@@ -285,23 +247,16 @@ const PayToPlay = {
             const signature = await connection.sendRawTransaction(rawTx, { skipPreflight: true });
 
             if (btn) btn.textContent = 'CONFIRMING...';
-
             let confirmed = false;
             const startTime = Date.now();
-            const resendLoop = setInterval(async () => {
-                try { await connection.sendRawTransaction(rawTx, { skipPreflight: true }); } catch(e) {}
-            }, 2000);
-
+            const resendLoop = setInterval(async () => { try { await connection.sendRawTransaction(rawTx, { skipPreflight: true }); } catch(e) {} }, 2000);
             try {
                 while (!confirmed && (Date.now() - startTime) < 90000) {
                     await new Promise(r => setTimeout(r, 2000));
                     const status = await connection.getSignatureStatus(signature);
-                    if (status?.value?.confirmationStatus === 'confirmed' || status?.value?.confirmationStatus === 'finalized') {
-                        confirmed = true;
-                    }
+                    if (status?.value?.confirmationStatus === 'confirmed' || status?.value?.confirmationStatus === 'finalized') confirmed = true;
                 }
             } finally { clearInterval(resendLoop); }
-
             if (!confirmed) throw new Error('Transaction timeout. Check Solscan: ' + signature);
 
             this.hasPaid = true;
@@ -312,61 +267,41 @@ const PayToPlay = {
             this.updateTrialBadge();
             alert('Payment successful! Choose your beast!');
             goToSelect();
-
         } catch (error) {
             alert('Payment failed: ' + error.message);
         } finally {
-            if (btn) {
-                btn.classList.remove('loading');
-                btn.disabled = false;
-                btn.textContent = 'PAY 1000 $CLAWS';
-            }
+            if (btn) { btn.classList.remove('loading'); btn.disabled = false; btn.textContent = 'PAY 1000 $CLAWS'; }
         }
     },
 
     async claimRewards() {
-        if (!this.walletConnected) {
-            alert('Please connect your wallet first!');
-            return;
-        }
-        if (this.claimableRewards <= 0) {
-            alert('No rewards to claim!');
-            return;
-        }
+        if (!this.walletConnected) { alert('Please connect your wallet first!'); return; }
+        if (this.claimableRewards <= 0) { alert('No rewards to claim!'); return; }
 
         const claimBtn = document.getElementById('claim-rewards-btn');
-        if (claimBtn) {
-            claimBtn.disabled = true;
-            claimBtn.textContent = 'CLAIMING...';
-        }
+        const resultClaimBtn = document.getElementById('result-claim-btn');
+        if (claimBtn) { claimBtn.disabled = true; claimBtn.textContent = 'CLAIMING...'; }
+        if (resultClaimBtn) { resultClaimBtn.disabled = true; resultClaimBtn.textContent = 'CLAIMING...'; }
 
         try {
             const claimedAmount = this.claimableRewards;
             
-            // Store claim request
-            const claims = JSON.parse(localStorage.getItem('claws_claims') || '[]');
-            claims.push({
-                wallet: this.walletAddress,
-                amount: claimedAmount,
-                timestamp: Date.now(),
-                status: 'pending'
-            });
-            localStorage.setItem('claws_claims', JSON.stringify(claims));
-
-            // Reset claimable
+            // Send to Google Sheets
+            if (this.GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
+                await fetch(`${this.GOOGLE_SCRIPT_URL}?action=addClaim&wallet=${this.walletAddress}&amount=${claimedAmount}`, { mode: 'no-cors' });
+            }
+            
+            // Reset local claimable
             this.claimableRewards = 0;
             localStorage.setItem('claws_claimable', '0');
             this.updateClaimButton();
 
             alert(`Claim submitted for ${claimedAmount} $CLAWS!\n\nWallet: ${this.walletAddress.slice(0,6)}...${this.walletAddress.slice(-6)}\n\nProcessing: 24-48 hours`);
-
         } catch (error) {
             alert('Claim failed: ' + error.message);
         } finally {
-            if (claimBtn) {
-                claimBtn.disabled = false;
-                claimBtn.innerHTML = `CLAIM <span id="claim-amount">${this.claimableRewards}</span> $CLAWS`;
-            }
+            if (claimBtn) { claimBtn.disabled = false; claimBtn.innerHTML = `CLAIM <span id="claim-amount">${this.claimableRewards}</span> $CLAWS`; }
+            if (resultClaimBtn) { resultClaimBtn.disabled = false; resultClaimBtn.innerHTML = `CLAIM <span id="result-claim-amount">${this.claimableRewards}</span> $CLAWS`; }
         }
     },
 
@@ -374,6 +309,12 @@ const PayToPlay = {
         if (this.isTrialMode || !this.hasPaid) return 0;
         const reward = this.WIN_REWARD + (streak * 10);
         this.addReward(reward);
+        
+        // Record to Google Sheets
+        if (this.GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE' && this.walletAddress) {
+            fetch(`${this.GOOGLE_SCRIPT_URL}?action=recordWin&wallet=${this.walletAddress}&reward=${reward}`, { mode: 'no-cors' }).catch(e => {});
+        }
+        
         return reward;
     },
 
