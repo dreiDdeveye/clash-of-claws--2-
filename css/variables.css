@@ -1,0 +1,32 @@
+/* ==================== VARIABLES & BASE ==================== */
+:root {
+    --primary: #ff4d4d;
+    --primary-glow: rgba(255, 77, 77, 0.5);
+    --gold: #ffd700;
+    --gold-glow: rgba(255, 215, 0, 0.5);
+    --cyan: #00f0ff;
+    --cyan-glow: rgba(0, 240, 255, 0.5);
+    --purple: #b14aed;
+    --purple-glow: rgba(177, 74, 237, 0.5);
+    --dark-bg: #0a0a0f;
+    --card-bg: rgba(20, 20, 35, 0.8);
+    --fire: #ff6b35;
+    --water: #00d4ff;
+    --grass: #00ff88;
+    --electric: #ffea00;
+    --dark: #8b5cf6;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Orbitron', sans-serif;
+    background: var(--dark-bg);
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+}

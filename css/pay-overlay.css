@@ -1,0 +1,208 @@
+/* ==================== PAY OVERLAY ==================== */
+.pay-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 5000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(10px);
+}
+
+.pay-overlay.hidden {
+    display: none;
+}
+
+.pay-modal {
+    background: linear-gradient(135deg, rgba(30, 30, 50, 0.95), rgba(20, 20, 35, 0.98));
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 24px;
+    padding: 50px;
+    text-align: center;
+    max-width: 450px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 100px rgba(255, 215, 0, 0.1);
+}
+
+.pay-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+    animation: payGlowPulse 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes payGlowPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+.pay-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+}
+
+.pay-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    animation: iconBounce 2s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.pay-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 24px;
+    background: linear-gradient(90deg, var(--gold), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 15px;
+}
+
+.pay-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.pay-fee {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 16px;
+    padding: 20px 30px;
+    margin-bottom: 25px;
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.fee-amount {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 32px;
+    color: var(--gold);
+    text-shadow: 0 0 20px var(--gold-glow);
+}
+
+.fee-token {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 700;
+}
+
+.wallet-status {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 25px;
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.wallet-status.connected {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.pay-btn {
+    display: block;
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold), #ff9500);
+    border: none;
+    padding: 18px 40px;
+    color: #000;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 30px var(--gold-glow);
+    margin-bottom: 15px;
+}
+
+.pay-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px var(--gold-glow);
+}
+
+.pay-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.pay-btn.loading {
+    background: linear-gradient(135deg, #666, #888);
+    animation: loadingPulse 1s infinite;
+}
+
+@keyframes loadingPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.trial-btn {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 15px 30px;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.trial-btn:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pay-note {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Trial Badge */
+.trial-badge {
+    position: fixed;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, rgba(255, 100, 100, 0.9), rgba(200, 50, 50, 0.9));
+    color: #fff;
+    padding: 10px 25px;
+    border-radius: 25px;
+    font-size: 11px;
+    font-weight: 700;
+    z-index: 1001;
+    box-shadow: 0 5px 20px rgba(255, 100, 100, 0.4);
+    animation: trialPulse 2s ease-in-out infinite;
+}
+
+.trial-badge.hidden {
+    display: none;
+}
+
+@keyframes trialPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.02); }
+}

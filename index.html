@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$CLASH OF CLAWS - Beast Battle Arena</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/background.css">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/buttons.css">
+    <link rel="stylesheet" href="css/hero.css">
+    <link rel="stylesheet" href="css/selection.css">
+    <link rel="stylesheet" href="css/battle.css">
+    <link rel="stylesheet" href="css/battle-ui.css">
+    <link rel="stylesheet" href="css/pay-overlay.css">
+    <link rel="stylesheet" href="css/safari.css">
+    <link rel="stylesheet" href="css/result.css">
+    <link rel="stylesheet" href="css/loading-footer.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <!-- ==================== ANIMATED BACKGROUND ==================== -->
+    <div class="bg-container">
+        <div class="bg-gradient"></div>
+        <div class="bg-grid"></div>
+        <div class="particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
+    <!-- ==================== LOADING SCREEN ==================== -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader"></div>
+        <div class="loading-text">LOADING...</div>
+    </div>
+
+    <!-- ==================== NAVIGATION ==================== -->
+    <nav class="navbar">
+        <div class="logo">
+            <img src="assets/logo.png" alt="$CLAWS Logo" class="logo-img">
+            <span class="logo-text">$CLAWS</span>
+        </div>
+        <div class="nav-links">
+            <a href="#" onclick="showHome()">HOME</a>
+            <a href="#" onclick="showSelect()">BATTLE</a>
+            <a href="#">TOKEN</a>
+        </div>
+        <div class="nav-right">
+            <a href="https://x.com/YOUR_TWITTER_HANDLE" target="_blank" class="social-link x-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <button class="connect-btn" id="walletBtn" onclick="connectWallet()">CONNECT</button>
+        </div>
+    </nav>
+
+    <!-- Battle Music (placeholder) -->
+    <audio id="battleMusic" loop>
+        <source src="assets/battle-music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- ==================== MAIN CONTAINER ==================== -->
+    <div class="container">
+        
+        <!-- ==================== HERO SECTION ==================== -->
+        <section class="hero" id="heroSection">
+            <div class="hero-badge">BEAST BATTLE ON SOLANA</div>
+            
+            <h1 class="hero-title">
+                <span class="dollar">$</span><span class="clash">CLASH</span>
+                <span class="of">of</span>
+                <span class="claws">CLAWS</span>
+            </h1>
+            
+            <p class="hero-subtitle">
+                Choose your beast champion, master their moves, and earn $CLAWS tokens in epic turn-based battles!
+            </p>
+            
+            <div class="hero-buttons">
+                <button class="btn-primary" onclick="showSelect()">ENTER ARENA</button>
+                <button class="btn-secondary">BUY $CLAWS</button>
+            </div>
+
+            <!-- Beast Showcase -->
+            <div class="beast-showcase">
+                <div class="preview-beast" onclick="showSelect()">
+                    <div class="beast-image-wrapper" style="--beast-color: var(--fire)">
+                        <div class="beast-glow"></div>
+                        <img src="assets/inferno-front.png" alt="Inferno">
+                    </div>
+                    <span class="name">INFERNO</span>
+                </div>
+                <div class="preview-beast" onclick="showSelect()">
+                    <div class="beast-image-wrapper" style="--beast-color: var(--water)">
+                        <div class="beast-glow"></div>
+                        <img src="assets/storm-front.png" alt="Storm">
+                    </div>
+                    <span class="name">STORM</span>
+                </div>
+                <div class="preview-beast" onclick="showSelect()">
+                    <div class="beast-image-wrapper" style="--beast-color: var(--dark)">
+                        <div class="beast-glow"></div>
+                        <img src="assets/molty-front.png" alt="Molty">
+                    </div>
+                    <span class="name">MOLTY</span>
+                </div>
+            </div>
+
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalBattles">0</div>
+                    <div class="stat-label">TOTAL BATTLES</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPlayers">0</div>
+                    <div class="stat-label">PLAYERS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPrize">0</div>
+                    <div class="stat-label">$CLAWS WON</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="currentStreak">0</div>
+                    <div class="stat-label">YOUR STREAK</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SELECTION SCREEN ==================== -->
+        <section class="game-screen" id="selectScreen">
+            <div class="select-screen">
+                <div class="select-header">
+                    <h2>CHOOSE YOUR BEAST</h2>
+                    <p>Click on a beast to select your champion</p>
+                </div>
+                <div class="beast-grid" id="beastGrid"></div>
+                <div class="select-actions">
+                    <button class="btn-primary" onclick="startBattle()" id="startBattleBtn" disabled style="opacity:0.5">SELECT A BEAST</button>
+                    <button class="btn-secondary" onclick="showHome()">BACK</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== BATTLE ARENA ==================== -->
+        <section class="battle-arena" id="battleArena">
+            <div class="battle-scene" id="battleScene">
+                <!-- Enemy HP Box - Top Right -->
+                <div class="enemy-zone">
+                    <div class="hp-box">
+                        <div class="hp-box-header">
+                            <span class="name" id="enemyName">ENEMY</span>
+                            <span class="level">Lv50</span>
+                        </div>
+                        <div class="hp-bar-container">
+                            <span class="hp-label">HP</span>
+                            <div class="hp-bar-outer">
+                                <div class="hp-bar-inner high" id="enemyHpBar" style="width:100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enemy Sprite - Top Right -->
+                <div class="enemy-sprite-zone">
+                    <img class="enemy-sprite" id="enemySprite" src="" alt="Enemy">
+                </div>
+
+                <!-- Player Sprite - Bottom Left -->
+                <div class="player-sprite-zone">
+                    <img class="player-sprite" id="playerSprite" src="" alt="Player">
+                </div>
+
+                <!-- Player HP Box - Bottom Left (below sprite) -->
+                <div class="player-zone">
+                    <div class="hp-box">
+                        <div class="hp-box-header">
+                            <span class="name" id="playerName">PLAYER</span>
+                            <span class="level">Lv50</span>
+                        </div>
+                        <div class="hp-bar-container">
+                            <span class="hp-label">HP</span>
+                            <div class="hp-bar-outer">
+                                <div class="hp-bar-inner high" id="playerHpBar" style="width:100%"></div>
+                            </div>
+                        </div>
+                        <div class="hp-numbers" id="playerHpText">100/100</div>
+                    </div>
+                </div>
+
+                <!-- Turn Badge -->
+                <div class="turn-badge" id="turnBadge">YOUR TURN</div>
+            </div>
+
+            <!-- Battle UI -->
+            <div class="battle-ui">
+                <div class="battle-log" id="battleLog">
+                    <div class="log-entry">Battle started!</div>
+                </div>
+                <div class="moves-panel" id="movesGrid"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ==================== PAY OVERLAY ==================== -->
+    <div class="pay-overlay" id="pay-overlay">
+        <div class="pay-modal">
+            <div class="pay-glow"></div>
+            <div class="pay-icon"><img src="assets/inferno-front.png" alt="Battle"></div>
+            <h2 class="pay-title">ENTER THE ARENA</h2>
+            <p class="pay-subtitle">Pay the entry fee to battle and earn $CLAWS rewards!</p>
+            
+            <div class="pay-fee">
+                <span class="fee-amount">1000</span>
+                <span class="fee-token">$CLAWS</span>
+            </div>
+            
+            <div class="wallet-status" id="wallet-status">Wallet not connected</div>
+            
+            <button class="pay-btn" id="pay-btn" onclick="payEntryFee()">
+                PAY 1000 $CLAWS
+            </button>
+            
+            <button class="trial-btn" onclick="startFreeTrial()">
+                FREE TRIAL (No Rewards)
+            </button>
+            
+            <p class="pay-note">Entry fee goes to the prize pool</p>
+        </div>
+    </div>
+
+    <!-- ==================== TRIAL BADGE ==================== -->
+    <div class="trial-badge hidden" id="trial-badge">
+        TRIAL MODE - No Rewards
+    </div>
+
+    <!-- ==================== SAFARI ZONE SECTION ==================== -->
+    <section class="safari-zone" id="safari">
+        <div class="safari-container">
+            <h2 class="section-title"><span class="highlight">Beast</span> Catching Expedition</h2>
+            <div class="safari-card">
+                <span class="demo-badge">Free Play</span>
+                <div class="safari-icon"><img src="assets/inferno-front.png" alt="Beast"></div>
+                <div class="safari-info">
+                    <div class="safari-tokens">FREE</div>
+                    <div class="safari-equals">=</div>
+                    <div class="safari-reward">1 Entry Ticket</div>
+                </div>
+                <p class="safari-desc">Explore different zones, encounter wild beasts, and catch them Safari-style!</p>
+                <div class="ticket-display">
+                    Your Tickets: <span class="count" id="ticket-count">1</span>
+                </div>
+                <button class="btn-primary" onclick="openSafari()">Enter Expedition</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== SAFARI MODAL ==================== -->
+    <div class="safari-modal" id="safari-modal">
+        <div class="safari-game-container">
+            <!-- Header -->
+            <div class="safari-header">
+                <div class="safari-header-left">
+                    <span class="safari-biome-name" id="safari-biome-name">Ocean Zone</span>
+                </div>
+                <div class="safari-header-right">
+                    <span class="safari-actions-left"><span id="actions-left">10</span> Actions</span>
+                    <button class="safari-exit-btn" onclick="exitSafari()">Exit</button>
+                </div>
+            </div>
+
+            <!-- Main Game Area -->
+            <div class="safari-game-area" id="safari-game-area">
+                <!-- Biome Selection Screen -->
+                <div class="safari-screen" id="biome-select-screen">
+                    <h3 class="safari-screen-title">Choose Your Zone</h3>
+                    <div class="biome-grid" id="biome-grid"></div>
+                </div>
+
+                <!-- Exploration Screen -->
+                <div class="safari-screen hidden" id="explore-screen">
+                    <div class="safari-environment" id="safari-environment">
+                        <!-- Background set via CSS: assets/safari-bg.png -->
+                    </div>
+                    <div class="safari-message" id="safari-message">You entered the Expedition!</div>
+                    <button class="btn-primary safari-explore-btn" id="explore-btn" onclick="SafariGame.explore()">
+                        Explore
+                    </button>
+                </div>
+
+                <!-- Encounter Screen -->
+                <div class="safari-screen hidden" id="encounter-screen">
+                    <div class="encounter-scene">
+                        <div class="creature-info-overlay">
+                            <span class="creature-name" id="encounter-creature-name">???</span>
+                            <span class="creature-rarity" id="encounter-creature-rarity">Common</span>
+                            <div class="creature-status" id="creature-status"></div>
+                        </div>
+                        <div class="encounter-creature" id="encounter-creature">
+                            <img id="encounter-creature-img" src="" alt="Wild Creature">
+                        </div>
+                    </div>
+                    
+                    <div class="encounter-ui-panel">
+                        <div class="encounter-log" id="encounter-log"></div>
+                        <div class="encounter-actions">
+                            <button class="encounter-btn capsule" onclick="SafariGame.throwCapsule()">
+                                <span class="encounter-btn-icon">●</span>
+                                <span class="encounter-btn-label">Capsule</span>
+                                <span class="encounter-btn-count" id="capsule-count">5</span>
+                            </button>
+                            <button class="encounter-btn bait" onclick="SafariGame.throwBait()">
+                                <span class="encounter-btn-icon">♦</span>
+                                <span class="encounter-btn-label">Bait</span>
+                                <span class="encounter-btn-count" id="bait-count">3</span>
+                            </button>
+                            <button class="encounter-btn rock" onclick="SafariGame.throwRock()">
+                                <span class="encounter-btn-icon">◆</span>
+                                <span class="encounter-btn-label">Rock</span>
+                                <span class="encounter-btn-count" id="rock-count">3</span>
+                            </button>
+                            <button class="encounter-btn run" onclick="SafariGame.runAway()">
+                                <span class="encounter-btn-icon">→</span>
+                                <span class="encounter-btn-label">Run</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Screen -->
+                <div class="safari-screen hidden" id="results-screen">
+                    <h3 class="safari-screen-title">Expedition Complete!</h3>
+                    <div class="results-stats">
+                        <div class="result-stat">
+                            <span class="result-label">Creatures Caught</span>
+                            <span class="result-value" id="result-caught">0</span>
+                        </div>
+                        <div class="result-stat">
+                            <span class="result-label">Creatures Fled</span>
+                            <span class="result-value fled" id="result-fled">0</span>
+                        </div>
+                        <div class="result-stat">
+                            <span class="result-label">Rares Found</span>
+                            <span class="result-value rare" id="result-rares">0</span>
+                        </div>
+                    </div>
+                    <div class="results-creatures" id="results-creatures"></div>
+                    <div class="results-actions">
+                        <button class="btn-secondary" onclick="closeSafari()">Exit</button>
+                        <button class="btn-primary" onclick="SafariGame.playAgain()">Play Again</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Bar -->
+            <div class="safari-inventory" id="safari-inventory">
+                <div class="inventory-item">
+                    <span class="inv-icon capsule-icon">●</span>
+                    <span class="inv-count" id="inv-capsules">5</span>
+                </div>
+                <div class="inventory-item">
+                    <span class="inv-icon bait-icon">♦</span>
+                    <span class="inv-count" id="inv-bait">3</span>
+                </div>
+                <div class="inventory-item">
+                    <span class="inv-icon rock-icon">◆</span>
+                    <span class="inv-count" id="inv-rocks">3</span>
+                </div>
+                <div class="inventory-divider"></div>
+                <div class="inventory-item caught">
+                    <span class="inv-icon caught-icon">★</span>
+                    <span class="inv-count" id="inv-caught">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== RESULT OVERLAY ==================== -->
+    <div class="result-overlay" id="resultOverlay">
+        <div class="result-title" id="resultTitle">VICTORY!</div>
+        <div class="result-reward" id="resultReward">+100 $CLAWS</div>
+        <div class="result-buttons">
+            <button class="btn-primary" onclick="playAgain()">PLAY AGAIN</button>
+            <button class="btn-secondary" onclick="showHome()">HOME</button>
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#">TWITTER</a>
+            <a href="#">TELEGRAM</a>
+            <a href="#">DISCORD</a>
+        </div>
+        <div class="footer-copyright">© 2024 $CLASH OF CLAWS • Built on Solana</div>
+    </footer>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/pay-to-play.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/safari.js"></script>
+</body>
+</html>

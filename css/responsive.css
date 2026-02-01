@@ -1,0 +1,136 @@
+/* ==================== RESPONSIVE STYLES ==================== */
+@media (max-width: 768px) {
+    /* Navbar */
+    .nav-links { 
+        display: none; 
+    }
+    
+    .navbar { 
+        padding: 12px 20px; 
+    }
+
+    /* Hero */
+    .beast-showcase { 
+        gap: 30px; 
+    }
+    
+    .beast-image-wrapper { 
+        width: 120px; 
+        height: 120px; 
+    }
+    
+    .stats-panel { 
+        grid-template-columns: repeat(2, 1fr); 
+    }
+
+    /* Selection */
+    .beast-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 15px; 
+    }
+    
+    .beast-card { 
+        padding: 20px 15px; 
+    }
+    
+    .beast-card .beast-image { 
+        width: 120px; 
+        height: 120px; 
+    }
+
+    /* Battle */
+    .battle-scene { 
+        height: 450px; 
+    }
+    
+    .enemy-sprite { 
+        width: 180px; 
+        height: 180px; 
+    }
+    
+    .player-sprite { 
+        width: 200px; 
+        height: 200px; 
+    }
+    
+    .battle-ui { 
+        grid-template-columns: 1fr; 
+    }
+    
+    .battle-log { 
+        border-right: none; 
+        border-bottom: 1px solid rgba(255,255,255,0.05); 
+        max-height: 120px; 
+    }
+
+    /* Pay Modal */
+    .pay-modal {
+        padding: 30px 20px;
+    }
+
+    .pay-title {
+        font-size: 18px;
+    }
+
+    .fee-amount {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small screens */
+    .hero-title .dollar,
+    .hero-title .clash,
+    .hero-title .claws {
+        font-size: 28px;
+    }
+
+    .hero-subtitle {
+        font-size: 12px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 14px 25px;
+        font-size: 10px;
+    }
+
+    .beast-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .battle-scene {
+        height: 380px;
+    }
+
+    .enemy-sprite {
+        width: 140px;
+        height: 140px;
+    }
+
+    .player-sprite {
+        width: 160px;
+        height: 160px;
+    }
+
+    .hp-box {
+        min-width: 160px;
+        padding: 8px 12px;
+    }
+
+    .hp-box .name {
+        font-size: 8px;
+    }
+
+    .moves-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .move-btn {
+        padding: 12px;
+    }
+
+    .move-btn .move-name {
+        font-size: 8px;
+    }
+}

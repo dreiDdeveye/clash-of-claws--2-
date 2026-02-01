@@ -1,0 +1,163 @@
+/* ==================== SELECTION SCREEN ==================== */
+.game-screen {
+    display: none;
+    min-height: 100vh;
+    padding: 100px 20px 40px;
+}
+
+.game-screen.active {
+    display: block;
+}
+
+.select-screen {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.select-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.select-header h2 {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(18px, 4vw, 28px);
+    background: linear-gradient(90deg, var(--gold), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 15px;
+}
+
+.select-header p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    letter-spacing: 2px;
+}
+
+.beast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.beast-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.beast-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--type-color, var(--primary)), transparent);
+}
+
+.beast-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--type-color, var(--gold));
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px var(--type-glow, var(--gold-glow));
+}
+
+.beast-card.selected {
+    border-color: var(--gold);
+    box-shadow: 0 0 50px var(--gold-glow);
+}
+
+.beast-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-weight: bold;
+}
+
+.beast-card .beast-image {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 20px;
+}
+
+.beast-card .beast-image .glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, var(--type-color, var(--primary)) 0%, transparent 70%);
+    opacity: 0.3;
+    filter: blur(15px);
+}
+
+.beast-card .beast-image img {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    z-index: 1;
+    transition: transform 0.3s ease;
+}
+
+.beast-card:hover .beast-image img {
+    transform: scale(1.1);
+}
+
+.beast-card .beast-name {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 11px;
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.beast-card .type-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: var(--type-color, #333);
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #000;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+}
+
+.beast-card .stats {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.beast-card .role {
+    font-size: 9px;
+    color: var(--gold);
+    letter-spacing: 2px;
+}
+
+.select-actions {
+    text-align: center;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}

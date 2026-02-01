@@ -1,0 +1,56 @@
+/* ==================== RESULT OVERLAY ==================== */
+.result-overlay {
+    display: none;
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.result-overlay.active { 
+    display: flex; 
+}
+
+.result-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(30px, 8vw, 60px);
+    margin-bottom: 30px;
+    animation: resultPulse 0.5s ease-in-out infinite alternate;
+}
+
+.result-title.victory {
+    background: linear-gradient(90deg, var(--gold), #ff9500);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 30px var(--gold-glow));
+}
+
+.result-title.defeat {
+    background: linear-gradient(90deg, var(--primary), #ff0040);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 30px var(--primary-glow));
+}
+
+@keyframes resultPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+}
+
+.result-reward {
+    font-size: 16px;
+    color: var(--gold);
+    margin-bottom: 40px;
+    letter-spacing: 2px;
+}
+
+.result-buttons {
+    display: flex;
+    gap: 20px;
+}
