@@ -7,7 +7,7 @@ const AdminPanel = {
     // Config
     TOKEN_MINT: 'BZz5TeFBaQ4uv5iXFf4S7mX7qzvyFLSbDpjeyzwRpump',
     TREASURY_WALLET: 'Bb7sK2Fzo22KXg83nq9uLRk5pW9eyVdJH32xo3XLd7Bn',
-    RPC_URL: 'https://mainnet.helius-rpc.com/?api-key=82dfe3db-e941-4299-b074-732540b89751',
+    RPC_URL: 'https://mainnet.helius-rpc.com/?api-key=baf23f95-165a-4136-b897-54b932e51c52',
     
     // Player data storage
     players: [],

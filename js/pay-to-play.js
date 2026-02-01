@@ -214,27 +214,11 @@ const PayToPlay = {
         }
 
         try {
-            // Use multiple RPC endpoints for reliability
-            const RPC_ENDPOINTS = [
-                'https://api.mainnet-beta.solana.com',
-                'https://solana-mainnet.g.alchemy.com/v2/demo',
-                'https://rpc.ankr.com/solana'
-            ];
-            
-            let connection;
-            for (const rpc of RPC_ENDPOINTS) {
-                try {
-                    connection = new solanaWeb3.Connection(rpc, {
-                        commitment: 'confirmed',
-                        confirmTransactionInitialTimeout: 120000
-                    });
-                    await connection.getLatestBlockhash();
-                    console.log('Using RPC:', rpc);
-                    break;
-                } catch (e) {
-                    console.log('RPC failed:', rpc);
-                }
-            }
+            // Your Helius RPC
+            const connection = new solanaWeb3.Connection(
+                'https://mainnet.helius-rpc.com/?api-key=baf23f95-165a-4136-b897-54b932e51c52',
+                'confirmed'
+            );
 
             const mintPubkey = new solanaWeb3.PublicKey(this.TOKEN_MINT);
             const treasuryPubkey = new solanaWeb3.PublicKey(this.TREASURY_WALLET);
@@ -251,9 +235,14 @@ const PayToPlay = {
             let tokenProgramId = mintOwner === this.TOKEN_2022_PROGRAM_ID 
                 ? this.TOKEN_2022_PROGRAM_ID 
                 : this.TOKEN_PROGRAM_ID;
+            
+            console.log('Token program:', tokenProgramId);
 
             const senderATA = await this.getATA(mintPubkey, senderPubkey, tokenProgramId);
             const treasuryATA = await this.getATA(mintPubkey, treasuryPubkey, tokenProgramId);
+
+            console.log('Sender ATA:', senderATA.toString());
+            console.log('Treasury ATA:', treasuryATA.toString());
 
             // Check balance
             const senderAccount = await connection.getAccountInfo(senderATA);
@@ -263,6 +252,7 @@ const PayToPlay = {
 
             const balanceInfo = await connection.getTokenAccountBalance(senderATA);
             const balance = balanceInfo.value.uiAmount;
+            console.log('Balance:', balance);
             
             if (balance < this.ENTRY_FEE) {
                 throw new Error(`Insufficient balance. You have ${balance} but need ${this.ENTRY_FEE} $CLAWS`);
@@ -271,7 +261,7 @@ const PayToPlay = {
             // Build instructions
             const instructions = [];
             
-            // Priority fee
+            // Priority fee for faster confirmation
             instructions.push(
                 solanaWeb3.ComputeBudgetProgram.setComputeUnitLimit({ units: 100000 }),
                 solanaWeb3.ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 500000 })
@@ -280,6 +270,7 @@ const PayToPlay = {
             // Create treasury ATA if needed
             const treasuryAccount = await connection.getAccountInfo(treasuryATA);
             if (!treasuryAccount) {
+                console.log('Treasury ATA needs to be created');
                 instructions.push(
                     this.createATAInstruction(senderPubkey, treasuryATA, treasuryPubkey, mintPubkey, tokenProgramId)
                 );
@@ -287,106 +278,105 @@ const PayToPlay = {
 
             // Transfer instruction
             const amount = this.ENTRY_FEE * Math.pow(10, this.TOKEN_DECIMALS);
+            console.log('Amount:', amount);
+            
             instructions.push(
                 this.createTransferInstruction(senderATA, treasuryATA, senderPubkey, amount, tokenProgramId)
             );
 
-            // Get FRESH blockhash right before sending
+            // Get FRESH blockhash
             if (btn) btn.textContent = 'PREPARING...';
             
             const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
-            console.log('Blockhash:', blockhash, 'Valid until:', lastValidBlockHeight);
+            console.log('Blockhash:', blockhash);
 
             // Create transaction
             const transaction = new solanaWeb3.Transaction();
             transaction.recentBlockhash = blockhash;
             transaction.feePayer = senderPubkey;
-            transaction.lastValidBlockHeight = lastValidBlockHeight;
             instructions.forEach(ix => transaction.add(ix));
 
-            // Sign
+            // Sign with Phantom
             if (btn) btn.textContent = 'SIGN IN WALLET...';
-            const signed = await window.solana.signTransaction(transaction);
             
-            // Send immediately after signing
+            let signed;
+            try {
+                signed = await window.solana.signTransaction(transaction);
+            } catch (e) {
+                if (e.message.includes('User rejected')) {
+                    throw new Error('Transaction cancelled by user');
+                }
+                throw e;
+            }
+            
+            // Send transaction
             if (btn) btn.textContent = 'SENDING...';
             
             const rawTx = signed.serialize();
-            let signature;
-            
-            // Try sending multiple times
-            for (let attempt = 0; attempt < 3; attempt++) {
-                try {
-                    signature = await connection.sendRawTransaction(rawTx, {
-                        skipPreflight: true,
-                        preflightCommitment: 'confirmed',
-                        maxRetries: 0
-                    });
-                    console.log('TX sent:', signature);
-                    break;
-                } catch (e) {
-                    console.log('Send attempt', attempt + 1, 'failed:', e.message);
-                    if (attempt === 2) throw e;
-                    await new Promise(r => setTimeout(r, 500));
-                }
-            }
+            const signature = await connection.sendRawTransaction(rawTx, {
+                skipPreflight: true,
+                preflightCommitment: 'confirmed'
+            });
 
-            if (btn) btn.textContent = 'CONFIRMING...';
+            console.log('TX sent:', signature);
             console.log('Solscan: https://solscan.io/tx/' + signature);
 
-            // Custom confirmation with resubmission
-            const startTime = Date.now();
-            const timeout = 60000; // 60 seconds
-            let confirmed = false;
-            let resendInterval;
+            if (btn) btn.textContent = 'CONFIRMING...';
 
-            // Resend transaction every 2 seconds until confirmed
-            resendInterval = setInterval(async () => {
+            // Confirmation with resubmission loop
+            const startTime = Date.now();
+            const timeout = 90000; // 90 seconds
+            let confirmed = false;
+            
+            // Resend every 2 seconds to combat blockhash expiry
+            const resendLoop = setInterval(async () => {
                 try {
                     await connection.sendRawTransaction(rawTx, {
                         skipPreflight: true,
-                        preflightCommitment: 'confirmed',
-                        maxRetries: 0
+                        preflightCommitment: 'confirmed'
                     });
-                } catch (e) {
-                    // Ignore resend errors
-                }
+                } catch (e) {}
             }, 2000);
 
             try {
                 while (!confirmed && (Date.now() - startTime) < timeout) {
-                    await new Promise(r => setTimeout(r, 1000));
+                    await new Promise(r => setTimeout(r, 2000));
                     
-                    const status = await connection.getSignatureStatus(signature);
-                    
-                    if (status && status.value) {
-                        if (status.value.err) {
-                            clearInterval(resendInterval);
-                            throw new Error('Transaction failed on chain');
+                    try {
+                        const status = await connection.getSignatureStatus(signature);
+                        
+                        if (status && status.value) {
+                            if (status.value.err) {
+                                throw new Error('Transaction failed: ' + JSON.stringify(status.value.err));
+                            }
+                            if (status.value.confirmationStatus === 'confirmed' || 
+                                status.value.confirmationStatus === 'finalized') {
+                                confirmed = true;
+                                console.log('Confirmed!');
+                            }
                         }
-                        if (status.value.confirmationStatus === 'confirmed' || 
-                            status.value.confirmationStatus === 'finalized') {
-                            confirmed = true;
-                            break;
-                        }
-                    }
-                    
-                    // Check if blockhash expired
-                    const currentHeight = await connection.getBlockHeight();
-                    if (currentHeight > lastValidBlockHeight) {
-                        clearInterval(resendInterval);
-                        throw new Error('Transaction expired. Please try again.');
+                    } catch (e) {
+                        if (e.message.includes('Transaction failed')) throw e;
+                        console.log('Waiting for confirmation...');
                     }
                 }
             } finally {
-                clearInterval(resendInterval);
+                clearInterval(resendLoop);
             }
 
             if (!confirmed) {
-                throw new Error('Confirmation timeout. Check Solscan: ' + signature);
+                // Final check
+                const finalStatus = await connection.getSignatureStatus(signature);
+                if (finalStatus?.value && !finalStatus.value.err) {
+                    confirmed = true;
+                }
             }
 
-            console.log('Payment confirmed!');
+            if (!confirmed) {
+                throw new Error('Transaction may have succeeded. Check Solscan: https://solscan.io/tx/' + signature);
+            }
+
+            console.log('Payment successful!');
 
             this.hasPaid = true;
             this.isTrialMode = false;
@@ -475,8 +465,8 @@ const PayToPlay = {
 
         try {
             const connection = new solanaWeb3.Connection(
-                'https://mainnet.helius-rpc.com/?api-key=82dfe3db-e941-4299-b074-732540b89751',
-                { commitment: 'confirmed', confirmTransactionInitialTimeout: 60000 }
+                'https://mainnet.helius-rpc.com/?api-key=baf23f95-165a-4136-b897-54b932e51c52',
+                'confirmed'
             );
 
             const mintPubkey = new solanaWeb3.PublicKey(this.TOKEN_MINT);
